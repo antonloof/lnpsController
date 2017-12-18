@@ -1,0 +1,119 @@
+<style>
+	* {
+		font-family: arial;
+		box-sizing: border-box;
+	}
+	
+	.running {
+		background: yellow;
+	}
+	
+	.success {
+		background: green;
+	}
+	
+	.error {
+		backgroundd: red;
+	}
+	
+	.tb {
+		width: 12.5%;
+		display: inline-block;
+		padding: 5px;
+		text-align: center;
+	}
+	
+	.bench {
+		padding: 15px;
+	}
+	
+	.bench th {
+		text-align: right;
+	}
+	
+	.ps {
+		width: 100%;
+		height: 100px;
+		border: 3px solid black;
+		display: inline-block;
+	}
+	
+	.led, .led-text-wrapper {
+		display: inline-block;
+	}
+	
+	.led {
+		width: 30%;
+		height: 0px;
+		padding-top: 30%;
+		vertical-align: middle;
+		border-radius: 100%;
+	}
+	
+	.led-text-wrapper {
+		width: 70%;
+	}
+	
+	.led-text {
+		display: inline-block;
+		vertical-align: middle;
+		font-size: 1.2em;
+	}
+	
+	.led-wrapper {
+		width: 90%;
+		display: inline-block;
+		margin-bottom: 5px;
+	}
+	
+	.top {
+		background: white;
+		display: inline-block;
+		width: 85%;
+		margin-bottom: 5px;
+	}
+	
+	.name {
+		display: inline-block;
+		font-size: 1.5em;
+	}
+</style>
+
+<html>
+	<div class="tb">
+		<div class="bench running">
+			<div class="top">
+				<div class="name">Test Bench 1 - testbänkens namn</div>
+				<div class="led-wrapper">
+					<div class="led-text-wrapper"><span class="led-text">Led status: </span></div><!--
+					--><div class="led" data-blink="green red yellow"></div>
+				</div>
+				
+				<div class="ps">
+					1.729A @ 30V
+				</div>
+			</div>
+			<table>
+				<tr>
+					<th>Status</th>
+					<td>Some long text. Some long text. Some long text. Some long text. Some long text. Some long text.</td>
+				</tr>
+			</table>
+		</div>
+	</div><!--
+	-->
+</html>
+
+<script>
+	var leds = document.querySelectorAll(".led");
+	for (var i = 0; i < leds.length; i++) {
+		leds[i].dataset.i = 0;
+	}
+	setInterval(function () {
+		for (var i = 0; i < leds.length; i++) {
+			var split = leds[i].dataset.blink.split(" ");
+			leds[i].style.background = split[leds[i].dataset.i];
+			leds[i].dataset.i = (leds[i].dataset.i + 1) % split.length;
+		}
+	}, 1000);
+</script>
