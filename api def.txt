@@ -22,5 +22,3 @@ api
 						read-write: float, opCurrent
 					write: [byte] query
 				read-write: [int], led
-					
-					
