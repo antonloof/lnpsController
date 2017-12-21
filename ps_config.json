@@ -1,21 +1,11 @@
 {
 	"ports":[
-		"trams1",
-		"trams2",
-		"trams3"
+		"COM3"
 	],
 	"powersupplies": [
 		{
-			"serialNo": 123,
+			"serialNo": "2694070088",
 			"dev": 1
-		},
-		{
-			"serialNo": 1234,
-			"dev": 2
-		},
-		{
-			"serialNo": 12345,
-			"dev": 3
 		}
 	]
 }
