@@ -48,6 +48,8 @@ class PsConf:
 		self.overCurrentProtectionActive = 0
 		self.overPowerProtectionActive   = 0
 		self.overTempProtectionActive    = 0
+		self.current                     = 0
+		self.voltage                     = 0
 	
 class DeviceControll:
 	SWITCH_POWER_ON    = 0x0101
@@ -80,6 +82,8 @@ def createHeader(sd, dn, obj):
 	return bytes([sd, dn, obj])
 	
 class PsResponse():
+	CLASSES = {0:"UNKNOWN",16:"SINGLE",24:"TRIPPLE"}
+	
 	def __init__(self):
 		self.data = b""
 		self.errors = []
@@ -116,12 +120,10 @@ class PsResponse():
 	
 	def toFloat(self):
 		self.forceLength(4)
-		data = self.data
-		if sys.byteorder == 'little':
-			data = bytes(reversed(data))
-		return struct.unpack('f', data)[0]
+		return struct.unpack('>f', self.data)[0]
 		
 	def toPsConf(self):
+		self.forceLength(6)
 		conf = PsConf()
 		conf.remoteOn = (self.data[0] & (1 << 0)) == (1 << 0)
 		conf.switchOn = (self.data[1] & (1 << 0)) == (1 << 0)
@@ -132,6 +134,8 @@ class PsResponse():
 		conf.overCurrentProtectionActive = ((self.data[1] & (1 << 7)) == (1 << 5))
 		conf.overPowerProtectionActive = ((self.data[1] & (1 << 7)) == (1 << 6))
 		conf.overTempProtectionActive = ((self.data[1] & (1 << 7)) == (1 << 7))
+		conf.voltage = int.from_bytes(self.data[2:4], byteorder='big')
+		conf.current = int.from_bytes(self.data[4:6], byteorder='big')
 		return conf
 	
 	def toInt16(self):
@@ -142,6 +146,13 @@ class PsResponse():
 		if len(self.errors) > 0:
 			return self.errors[0]
 		return ""
+		
+	def toClass(self):
+		iClass = self.toInt16()
+		res = {"iClass": iClass, "sClass": "UNKNOWN"}
+		if iClass in PsResponse.CLASSES:
+			res["sClass"] = PsResponse.CLASSES[iClass]
+		return res	
 		
 class PowerSupply():
 	def __init__(self, port):
@@ -171,11 +182,11 @@ class PowerSupply():
 		self.serial.write(header + data + calculateChecksum(header, data))
 		
 	def dynamicCall(self, func, data=[]):
-		def funcNotFound():
+		def funcNotFound(*args, **kwargs):
 			print("Function", func, "not found in PowerSupply")
 			resp = PsResponse()
 			resp.add("Func not found")
-			return resp
+			return resp.getError()
 			
 		return getattr(self, func, funcNotFound)(*data)
 		
@@ -226,11 +237,24 @@ class PowerSupply():
 	def getVoltage(self):
 		return self.getNomVoltage() * self.get(ComObject.VOLTAGE).toInt16() / 25600
 		
-	def getCurrent(self):
+	def setVoltage(self, voltage):
+		self.setRemote(True)
+		bs = int(voltage / self.getNomVoltage() * 25600).to_bytes(2, 'big')
+		return self.set(ComObject.VOLTAGE, bs).getError()
+		
+	def getCurrentLimit(self):
 		return self.getNomCurrent() * self.get(ComObject.CURRENT).toInt16() / 25600
 		
+	def setCurrentLimit(self, current):
+		self.setRemote(True)
+		bs = int(current / self.getNomCurrent() * 25600).to_bytes(2, 'big')
+		return self.set(ComObject.CURRENT, bs).getError()
+		
 	def getConf(self):
-		return self.getConfObj().__dict__
+		conf = self.getConfObj()
+		conf.voltage *= self.getNomVoltage() / 25600
+		conf.current *= self.getNomCurrent() / 25600
+		return conf.__dict__
 		
 	def getConfObj(self):
 		return self.get(ComObject.DEV_CONF).toPsConf()
@@ -249,11 +273,40 @@ class PowerSupply():
 		return self.set(ComObject.DEV_CONTROL, send.to_bytes(2, 'big')).getError()
 		
 	def setSwitch(self, value):
+		self.setRemote(True)
 		if value:
 			send = DeviceControll.SWITCH_POWER_ON
 		else:
 			send = DeviceControll.SWITCH_POWER_OFF
 		return self.set(ComObject.DEV_CONTROL, send.to_bytes(2, 'big')).getError()
+		
+	def getOverVoltage(self):
+		return self.get(ComObject.OVP_THRESHOLD).toInt16() * self.getNomVoltage() / 25600
+
+	def setOverVoltage(self, voltage):
+		self.setRemote(True)
+		bs = int(voltage / self.getNomVoltage() * 25600).to_bytes(2, 'big')
+		return self.set(ComObject.OVP_THRESHOLD, bs).getError()
+		
+	def getOverCurrent(self):
+		return self.get(ComObject.OCP_THRESHOLD).toInt16() * self.getNomCurrent() / 25600
+		
+	def setOverCurrent(self, current):
+		self.setRemote(True)
+		bs = int(current / self.getNomCurrent() * 25600).to_bytes(2, 'big')
+		return self.set(ComObject.OCP_THRESHOLD, bs).getError()
+		
+	def getClass(self):
+		return self.get(ComObject.DEV_CLASS).toClass()
+		
+	def getStatus(self):
+		conf = self.getStatusObj()
+		conf.voltage *= self.getNomVoltage() / 25600
+		conf.current *= self.getNomCurrent() / 25600
+		return conf.__dict__
+		
+	def getStatusObj(self):
+		return self.get(ComObject.DEV_STATUS).toPsConf()
 		
 class Request():
 	def __init__(self, func, *data):

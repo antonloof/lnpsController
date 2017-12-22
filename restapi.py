@@ -7,25 +7,29 @@ class ApiBranch():
 	
 	def _get(self, respHeader, navData):
 		respHeader.setError(404)
+		raise ValueError("Not Found")
 		
 	def put(self, respHeader, reqData, navData):
 		self._put(respHeader, reqData, navData)
 		
 	def _put(self, respHeader, reqData, navData):
 		respHeader.setError(405)
+		raise ValueError("Not allowed")
 	
 	def post(self, respHeader, reqData, navData):
 		self._post(respHeader, reqData, navData)
 	
 	def _post(self, respHeader, reqData, navData):
 		respHeader.setError(405)
+		raise ValueError("Not allowed")
 		
 	def delete(self, respHeader, navData):
 		self._delete(respHeader, navData)
 		
 	def _delete(self, respHeader, navData):
 		respHeader.setError(405)
-	
+		raise ValueError("Not allowed")
+		
 class RestAPI():
 	def __init__(self, parent=None,name=""):
 		self.parent = parent
@@ -83,10 +87,13 @@ class RestAPI():
 				raise ValueError("Getting entire lists not supported")
 			res = {}
 			for k,v in self.children.items():
-				if k in reqData:
-					res[k] = v.fetchData(method, respHeader, reqData[k], navData)
-				else:
-					res[k] = v.fetchData(method, respHeader, reqData, navData)
+				try:
+					if k in reqData:
+						res[k] = v.fetchData(method, respHeader, reqData[k], navData)
+					else:
+						res[k] = v.fetchData(method, respHeader, reqData, navData)
+				except ValueError as e:
+					res[k] = str(e)
 			return res
 		if method == "GET":
 			return self.apiBranch.get(respHeader, navData)
