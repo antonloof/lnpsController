@@ -80,13 +80,14 @@ def calculateChecksum(h, d):
 	
 def createHeader(sd, dn, obj):
 	return bytes([sd, dn, obj])
-	
+
 class PsResponse():
 	CLASSES = {0:"UNKNOWN",16:"SINGLE",24:"TRIPPLE"}
 	
 	def __init__(self):
 		self.data = b""
 		self.errors = []
+		self.raw = {}
 		
 	def add(self, e):
 		self.errors.append(e)
@@ -107,7 +108,13 @@ class PsResponse():
 			self.add("Object returned was not the expected one, got:" + str(obj) + " expected: " + str(expectedObj))
 		if obj == ComObject.ERROR_CODE:
 			self.add(PS_ERRORS[ord(data)]) 
-		
+		self.raw = {
+			"startDelim": startDelim,
+			"deviceNode": deviceNode,
+			"obj": obj,
+			"data": data.hex(),
+			"checksum": checksum.hex()
+		}
 	def forceLength(self, length):
 		if len(self.data) != length:
 			self.add("The data does not meet the required length, is " + len(self.data) + " should be " + length + " bytes") 
@@ -153,6 +160,9 @@ class PsResponse():
 		if iClass in PsResponse.CLASSES:
 			res["sClass"] = PsResponse.CLASSES[iClass]
 		return res	
+		
+	def toRaw(self):
+		return self.raw
 		
 class PowerSupply():
 	def __init__(self, port):
@@ -203,6 +213,14 @@ class PowerSupply():
 		startDelim = MSG_TYPE_SEND + CAST_TYPE_BROADCAST + DIRECTION_FROM_PC + 1
 		self.send(startDelim, 0, obj, data)
 		return self.recv(obj)
+		
+	def query(self, bytes):
+		startDelim = bytes[0]
+		deviceNode = bytes[1]
+		obj = bytes[2]
+		data = bytes[3:]
+		self.send(startDelim, deviceNode, obj, data)
+		return self.recv(obj).toRaw()
 		
 	def getSerialNo(self):
 		return self.get(ComObject.DEV_SER_NO).toString()

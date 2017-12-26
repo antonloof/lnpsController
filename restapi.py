@@ -3,28 +3,28 @@ import json
 	
 class ApiBranch():
 	def get(self, respHeader, navData):
-		self._get(respHeader, navData)
+		return self._get(respHeader, navData)
 	
 	def _get(self, respHeader, navData):
 		respHeader.setError(404)
 		raise ValueError("Not Found")
 		
 	def put(self, respHeader, reqData, navData):
-		self._put(respHeader, reqData, navData)
+		return self._put(respHeader, reqData, navData)
 		
 	def _put(self, respHeader, reqData, navData):
 		respHeader.setError(405)
 		raise ValueError("Not allowed")
 	
 	def post(self, respHeader, reqData, navData):
-		self._post(respHeader, reqData, navData)
+		return self._post(respHeader, reqData, navData)
 	
 	def _post(self, respHeader, reqData, navData):
 		respHeader.setError(405)
 		raise ValueError("Not allowed")
 		
 	def delete(self, respHeader, navData):
-		self._delete(respHeader, navData)
+		return self._delete(respHeader, navData)
 		
 	def _delete(self, respHeader, navData):
 		respHeader.setError(405)
@@ -52,6 +52,8 @@ class RestAPI():
 			nextStart = 1
 			self.isArray = step[0] == "<" and step[-1] == ">"
 			if self.isArray:
+				if len(steps) == 1:
+					raise ValueError("Cant add numerical parameter without children")
 				self.arrayKeyName = step[1:-1]
 				step = steps[1]
 				nextStart = 2
@@ -71,7 +73,6 @@ class RestAPI():
 					step = steps[1]
 					nextStart = 2
 				else:
-					
 					return self.fetchData(method, respHeader, reqData, navData)
 			if step in self.children:
 				return self.children[step].response(steps[nextStart:], method, respHeader, reqData, navData)
@@ -80,7 +81,7 @@ class RestAPI():
 				return {}
 				
 	def fetchData(self, method, respHeader, reqData, navData):
-		if self.apiBranch is None:
+		if self.apiBranch is None or (self.isArray and self.arrayKeyName in navData):
 			if self.isArray and not self.arrayKeyName in navData:
 				#ändra så att den ger alla
 				respHeader.setError(400)

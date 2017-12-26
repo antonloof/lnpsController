@@ -135,9 +135,37 @@ class StatusBranch(LnpsControllerBranch):
 	def _get(self, respHeader, navData):
 		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getStatus"))
 		
+class DevBranch(ApiBranch):
+	def __init__(self, psThreadContainers):
+		self.psThreadContainers = psThreadContainers
+	
+	def _get(self, respHeader, navData):
+		return list(self.psThreadContainers.keys())
+		
+class LedBranch(LnpsControllerBranch):
+	def _get(self, respHeader, navData):
+		return "getter 4 led"
+		
+	def _put(self, respHeader, reqData, navData):
+		return "putter 4 led"
+		
+class QueryBranch(LnpsControllerBranch):
+	def _post(self, respHeader, reqData, navData):
+		validateSet(reqData, respHeader, "hex")
+		try:
+			bytes = bytearray.fromhex(reqData["hex"])
+		except ValueError:
+			respHeader.setError(400)
+			raise ValueError("hex is not a hexadecimal string")
+		if len(bytes) < 3:
+			respHeader.setError(400)
+			raise ValueError("hex must be 3 bytes long (6 chars)")
+		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("query", bytes))
+		
 def createApi(psThreadContainers):
 	rootApi = RestAPI()
-	ps = rootApi.add("/api/v1/dev/<benchNo>/ps")
+	dev = rootApi.add("/api/v1/dev", DevBranch(psThreadContainers))
+	ps = dev.add("<benchNo>/ps")
 	general = ps.add("general")
 	general.add("serialNo", SerialNoBranch(psThreadContainers))
 	general.add("manufacturer", ManBranch(psThreadContainers))
@@ -157,6 +185,8 @@ def createApi(psThreadContainers):
 	status.add("overVoltage", OverVoltageBranch(psThreadContainers))
 	status.add("overCurrent", OverCurrentBranch(psThreadContainers))
 	status.add("status", StatusBranch(psThreadContainers))
+	dev.add("<benchNo>/led", LedBranch(psThreadContainers))
+	ps.add("query", QueryBranch(psThreadContainers))
 	return rootApi
 	
 def validateSet(arr, respHeader, *keys):
