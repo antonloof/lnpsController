@@ -1,7 +1,9 @@
-from psconnection import *
-import threading
-from restapi import *
+import threading, html
+
+from psController import *
 from ledController import *
+from testStatusController import *
+from restapi import *
 
 class LnpsControllerBranch(ApiBranch):
 	def __init__(self, psControllers):
@@ -166,7 +168,29 @@ class QueryBranch(LnpsControllerBranch):
 			raise ValueError("hex must be 3 bytes long (6 chars)")
 		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("query", bytes))
 		
-def createApi(psControllers, ledController):
+class TestStatusBranch(LnpsControllerBranch):
+		def __init__(self, psControllers, testStatusController):
+			super().__init__(psControllers)
+			self.testStatusController = testStatusController
+	
+		def _get(self, respHeader, navData):
+			serNo = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getSerialNo"))
+			try:
+				return self.testStatusController.waitQuery(TestStatusRequest(TYPE_GET, serNo))
+			except KeyError:
+				respHeader.setError(404)
+				raise ValueError("No name for " + serNo + " available")
+		
+		def _put(self, respHeader, reqData, navData):
+			status = html.escape(validateSet(reqData, respHeader, "teststatus"))
+			serNo = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getSerialNo"))
+			return self.testStatusController.waitQuery(TestStatusRequest(TYPE_SET, serNo, status))
+		
+class NameBranch(LnpsControllerBranch):
+		def _get(self, respHeader, navData):
+			return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getName"))
+		
+def createApi(psControllers, ledController, testStatusController):
 	rootApi = RestAPI()
 	dev = rootApi.add("/api/v1/dev", DevBranch(psControllers))
 	bench = dev.add("<benchNo>")
@@ -192,6 +216,8 @@ def createApi(psControllers, ledController):
 	status.add("status", StatusBranch(psControllers))
 	bench.add("led", LedBranch(ledController))
 	ps.add("query", QueryBranch(psControllers))
+	bench.add("name", NameBranch(psControllers))
+	bench.add("teststatus", TestStatusBranch(psControllers, testStatusController))
 	return rootApi
 	
 def validateSet(arr, respHeader, *keys):

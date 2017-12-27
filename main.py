@@ -1,8 +1,9 @@
 import threading, json, serial
-from asyncRESTServer import *
-from psconnection import * 
 import restapiDefs
+from psController import *
 from ledController import *
+from testStatusController import *
+from asyncRESTServer import *
 
 CONFIG_FILE = "config.json"
 with open(CONFIG_FILE, "r") as f:
@@ -37,12 +38,15 @@ for i in range(len(config["ports"])):
 		if ps.getSerialNo() == config["powersupplies"][i]["serialNo"]:
 			controller = PsController(ps)
 			controller.start()
+			ps.name = config["powersupplies"][i]["name"]
 			psControllers[str(config["powersupplies"][i]["dev"])] = controller
 			break
 			
 ledController = LedController(config["ledPort"])
 ledController.start()
-rootApi = restapiDefs.createApi(psControllers, ledController)	
+testStatusController = TestStatusController()
+testStatusController.start()
+rootApi = restapiDefs.createApi(psControllers, ledController, testStatusController)	
 
 server = AsyncRESTServer("localhost", 5049, rootApi)
 server.start()

@@ -7,11 +7,13 @@
 	"powersupplies": [
 		{
 			"serialNo": "2694070088",
-			"dev": 1
+			"dev": 1,
+			"name": "Kalle Anka"
 		},
 		{
 			"serialNo": "2710120402",
-			"dev": 2
+			"dev": 2,
+			"name": "Musse Pigg"
 		}
 	]
 }

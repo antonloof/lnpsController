@@ -1,38 +1,17 @@
 import serial, threading
+from controller import *
 BAUD_RATE = 115200
 
-class LedRequest:
+class LedRequest(Request):
 	def __init__(self, mess):
+		super().__init__()
 		self.mess = mess
-		self.res = None
-		self.sem = threading.Semaphore(0)
-		
-	def callback(self, res):
-		self.res = res
-		self.sem.release()
 
-class LedController(threading.Thread):
+class LedController(Controller):
 	def __init__(self, port):
-		threading.Thread.__init__(self)
+		super().__init__()
 		# self.serial = serial.Serial(port, BAUD_RATE, timeout=1)
-		self.queue = []
-		self.lock = threading.RLock()
-		self.sem = threading.Semaphore(0)
 		
-	def run(self):
-		while True:
-			self.sem.acquire()
-			with self.lock:
-				req = self.queue.pop()
-			req.callback(self.proccess(req))
-				
-	def waitQuery(self, req):
-		with self.lock:
-			self.queue.append(req)
-		self.sem.release() 
-		req.sem.acquire()
-		return req.res
-		
-	def proccess(self, req):
+	def process(self, req):
 		return req.mess
 		

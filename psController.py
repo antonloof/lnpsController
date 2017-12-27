@@ -1,5 +1,5 @@
 import threading, serial, time, struct, sys
-
+from controller import *
 REQUEST_GET = 0
 REQUEST_SET = 0
 
@@ -171,6 +171,7 @@ class PowerSupply():
 		self.nomCurrent = None
 		self.nomVoltage = None
 		self.nomPower = None
+		self.name = ""
 		
 	def recv(self, expectedObj):
 		startDelim = int.from_bytes(self.serial.read(), 'big')
@@ -326,8 +327,12 @@ class PowerSupply():
 	def getStatusObj(self):
 		return self.get(ComObject.DEV_STATUS).toPsConf()
 		
-class PsRequest():
+	def getName(self):
+		return self.name
+		
+class PsRequest(Request):
 	def __init__(self, func, *data):
+		super().__init__()
 		self.func = func
 		self.data = data
 		self.sem = threading.Semaphore(0)
@@ -336,24 +341,10 @@ class PsRequest():
 		self.res = res
 		self.sem.release()
 
-class PsController(threading.Thread):
+class PsController(Controller):
 	def __init__(self, ps):
-		threading.Thread.__init__(self)
+		super().__init__()
 		self.ps = ps
-		self.queue = []
-		self.sem = threading.Semaphore(0)
-		self.lock = threading.RLock()
 		
-	def run(self):
-		while True:
-			self.sem.acquire()
-			with self.lock:
-				request = self.queue.pop()
-			request.callback(self.ps.dynamicCall(request.func, request.data))
-		
-	def waitQuery(self, request):
-		with self.lock:
-			self.queue.append(request)
-		self.sem.release()
-		request.sem.acquire()
-		return request.res
+	def process(self, req):
+		return self.ps.dynamicCall(req.func, req.data)

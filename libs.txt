@@ -1,1 +1,2 @@
-pyserial
+pyserial, installeras med pip
+jquery 3.2.1, placeras i web/lib/jquery-3.2.1.js
