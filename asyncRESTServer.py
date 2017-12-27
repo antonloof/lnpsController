@@ -22,6 +22,7 @@ class HTTPRequestHeader():
 		self.url = []
 		self.headers = {}
 		self.populated = False
+		self.callback = None
 		
 	def hasHeader(self, h):
 		return h in self.headers
@@ -58,7 +59,14 @@ class HTTPRequestHeader():
 			
 		self.method = split[0]
 		#split on / and remove empty
-		self.url = list(filter(None, split[1].split("/")))
+		url = split[1].split("?")
+		self.url = list(filter(None, url[0].split("/")))
+		# parse get parameters for callback
+		if len(url) > 1:
+			for kvp in url[1].split("&"):
+				k,v = kvp.split("=")
+				if k == "callback":
+					self.callback = v
 		
 		return True
 	
@@ -68,8 +76,7 @@ class HTTPResponseHeader():
 		self.headers = {}
 		
 	def setError(self, e):
-		if self.error == 200 or self.error == 0:
-			self.error = e
+		self.error = e
 		
 	def tohttp(self):
 		resp = b"HTTP/1.1 " + bytes(str(self.error), "ascii") + b" " + bytes(HTTP_ERROR_MESS[self.error], "ascii") + b"\r\n"
@@ -143,13 +150,18 @@ class ClientThread(threading.Thread):
 		
 	def handle(self, reqHeaders, reqData):
 		respHeader = HTTPResponseHeader()
-		respHeader.setError(200)
 		sContent = ""
-		respHeader.add("Content-Type", "application/json")
 		try:
 			content = self.api.executeQuery(reqHeaders, respHeader, reqData)
 			sContent = json.dumps(content)
+			respHeader.setError(200)
 		except ValueError as e:
 			sContent = json.dumps(str(e))
+
+		if reqHeaders.callback is None:
+			respHeader.add("Content-Type", "application/json")
+		else:
+			respHeader.add("Content-Type", "application/javascript")
+			sContent = "/**/" + reqHeaders.callback + "(" + sContent + ");"
 		respHeader.add("Content-Length", len(sContent))
 		return (respHeader, bytes(sContent, "utf-8"))

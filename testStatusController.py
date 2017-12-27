@@ -22,7 +22,10 @@ class TestStatusController(Controller):
 			with open(DATA_PATH, "r") as f:
 				data = json.load(f)
 		if req.type == TYPE_GET:
-			return data[req.serNo]
+			if req.serNo in data:
+				return data[req.serNo]
+			else:
+				return None
 		elif req.type == TYPE_SET:
 			data[req.serNo] = req.value
 			with self.lock:

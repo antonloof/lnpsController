@@ -1,0 +1,122 @@
+* {
+	font-family: arial;
+	box-sizing: border-box;
+}
+
+h3, h2 {
+	margin: 5px; 
+	padding: 0;
+}
+
+p {
+	margin: 0 0 5px 0;
+}
+
+.bench {
+	display: inline-block;
+	width: 12.5%;
+	padding: 5px;
+	text-align: center;
+	position: relative;
+	overflow: hidden;
+}
+
+.ps {
+	width: 85%;
+	display: inline-block;
+	height: 100px;
+	background: #ccc;
+	position: relative;
+	overflow: hidden;
+}
+
+.display {
+	position: relative;
+	width: 50%;
+	left: 25%;
+	background: green;
+	height: 30%;
+	top: 10%;
+	border-radius: 4px;
+}
+
+.disabled:before, .disabled:after {
+	background: red;
+	position: absolute;
+	content: '';
+	display: block;
+	width: 100%;
+	height: 20px;
+	-webkit-transform: rotate(-45deg);
+	transform: rotate(-45deg);
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	margin: auto;
+	z-index: 666;
+}
+
+.disabled:before {
+	-webkit-transform: rotate(45deg);
+	transform: rotate(45deg);
+}
+
+.transfer {
+	display: block;
+	vertical-align: middle;
+}
+.arrow {
+	font-size: 60px;
+	vertical-align: middle;
+	font-family: consolas;
+}
+
+.voltage, .current {
+	bottom: 10%;
+	position: absolute;
+	font-family: consolas;
+	text-align: center;
+}
+
+.voltage {
+	left: 30%;
+}
+
+.current {
+	right: 30%;
+}
+
+.spinning {
+	width: 20px;
+	height: 20px;
+	background: black;
+	border-radius: 100%;
+	position: relative;
+	transform: rotate(45deg);
+}
+
+.stick {
+	width: 15px;
+	height: 15%;
+	position: absolute;
+	left: 50%;
+	top: 42.5%;
+	background: black;
+	pointer-events: none;
+}
+
+.test {
+	width: 85%;
+	display: inline-block;
+}
+
+.running {
+	background: yellow;
+}
+.fail {
+	background: red;
+}
+.success {
+	background: lightgreen;
+}

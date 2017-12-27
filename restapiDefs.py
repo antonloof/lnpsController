@@ -175,11 +175,7 @@ class TestStatusBranch(LnpsControllerBranch):
 	
 		def _get(self, respHeader, navData):
 			serNo = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getSerialNo"))
-			try:
-				return self.testStatusController.waitQuery(TestStatusRequest(TYPE_GET, serNo))
-			except KeyError:
-				respHeader.setError(404)
-				raise ValueError("No name for " + serNo + " available")
+			return self.testStatusController.waitQuery(TestStatusRequest(TYPE_GET, serNo))
 		
 		def _put(self, respHeader, reqData, navData):
 			status = html.escape(validateSet(reqData, respHeader, "teststatus"))
