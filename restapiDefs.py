@@ -1,20 +1,21 @@
 from psconnection import *
 import threading
 from restapi import *
+from ledController import *
 
 class LnpsControllerBranch(ApiBranch):
-	def __init__(self, psThreadContainers):
-		self.psThreadContainers = psThreadContainers
+	def __init__(self, psControllers):
+		self.psControllers = psControllers
 		
 	def get(self, respHeader, navData):
-		if navData["benchNo"] in self.psThreadContainers:
+		if navData["benchNo"] in self.psControllers:
 			return self._get(respHeader, navData)
 		else:
 			respHeader.setError(404)
 			raise ValueError("Bench no " + navData["benchNo"] + " does not exist")
 			
 	def put(self, respHeader, reqData, navData):
-		if navData["benchNo"] in self.psThreadContainers:
+		if navData["benchNo"] in self.psControllers:
 			return self._put(respHeader, reqData, navData)
 		else:
 			respHeader.setError(404)
@@ -22,132 +23,135 @@ class LnpsControllerBranch(ApiBranch):
 	
 class SerialNoBranch(LnpsControllerBranch):
 	def _get(self, respHeader, navData):
-		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getSerialNo"))
+		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getSerialNo"))
 		
 class ManBranch(LnpsControllerBranch):
 	def _get(self, respHeader, navData):
-		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getManufacturer"))
+		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getManufacturer"))
 		
 class PartNoBranch(LnpsControllerBranch):
 	def _get(self, respHeader, navData):
-		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getPartNo"))
+		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getPartNo"))
 		
 class SWVersionBranch(LnpsControllerBranch):
 	def _get(self, respHeader, navData):
-		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getSWVersion"))
+		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getSWVersion"))
 		
 class TypeBranch(LnpsControllerBranch):
 	def _get(self, respHeader, navData):
-		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getType"))
+		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getType"))
 		
 class NomVolatageBranch(LnpsControllerBranch):
 	def _get(self, respHeader, navData):
-		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getNomVoltage"))
+		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getNomVoltage"))
 		
 class NomCurrentBranch(LnpsControllerBranch):
 	def _get(self, respHeader, navData):
-		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getNomCurrent"))
+		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getNomCurrent"))
 		
 class NomPowerBranch(LnpsControllerBranch):
 	def _get(self, respHeader, navData):
-		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getNomPower"))
+		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getNomPower"))
 		
 class ClassBranch(LnpsControllerBranch):
 	def _get(self, respHeader, navData):
-		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getClass"))
+		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getClass"))
 		
 class VoltageBranch(LnpsControllerBranch):
 	def _get(self, respHeader, navData):
-		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getVoltage"))
+		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getVoltage"))
 		
 	def _put(self, respHeader, reqData, navData):
 		sVoltage = validateSet(reqData, respHeader, "voltage")
-		nomVoltage = self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getNomVoltage"))
-		nomPower = self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getNomPower"))
-		nomCurrent = self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getNomCurrent"))
+		nomVoltage = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getNomVoltage"))
+		nomPower = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getNomPower"))
+		nomCurrent = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getNomCurrent"))
 		voltage = validateFloat(sVoltage, respHeader, "voltage", 0, nomVoltage)
 		# limit current before setting voltage
 		if nomPower / voltage > nomCurrent:
 			setCurrent = nomCurrent
 		else:
 			setCurrent = nomPower / voltage
-		self.psThreadContainers[navData["benchNo"]].waitQuery(Request("setCurrent", setCurrent))
-		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("setVoltage", voltage))
+		self.psControllers[navData["benchNo"]].waitQuery(PsRequest("setCurrent", setCurrent))
+		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("setVoltage", voltage))
 		
 class CurrentLimitBranch(LnpsControllerBranch):
 	def _get(self, respHeader, navData):
-		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getCurrentLimit"))
+		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getCurrentLimit"))
 		
 	def _put(self, respHeader, reqData, navData):
 		sCurrent = validateSet(reqData, respHeader, "current")
-		nomCurrent = self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getNomCurrent"))
+		nomCurrent = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getNomCurrent"))
 		current = validateFloat(sCurrent, respHeader, "current", 0, nomCurrent)
-		nomPower = self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getNomPower"))
-		voltage = self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getVoltage"))
+		nomPower = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getNomPower"))
+		voltage = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getVoltage"))
 		if current * voltage > nomPower:
 			respHeader.setError(400)
 			raise ValueError("Current can not exceed " + str(nomPower / voltage) + "A at the currently configured voltage (" + str(voltage) + "V)")
-		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("setCurrentLimit", current))
+		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("setCurrentLimit", current))
 		
 class ConfBranch(LnpsControllerBranch):
 	def _get(self, respHeader, navData):
-		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getConf"))
+		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getConf"))
 
 class RemoteBranch(LnpsControllerBranch):
 	def _get(self, respHeader, navData):
-		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getRemote"))
+		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getRemote"))
 		
 	def _put(self, respHeader, reqData, navData):
 		sRemote = validateSet(reqData, respHeader, "remote")
 		remote = validateBool(sRemote, respHeader, "remote")
-		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("setRemote", remote))
+		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("setRemote", remote))
 		
 class SwitchBranch(LnpsControllerBranch):
 	def _get(self, respHeader, navData):
-		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getSwitch"))
+		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getSwitch"))
 	
 	def _put(self, respHeader, reqData, navData):
 		sSwitch = validateSet(reqData, respHeader, "switch")
 		switch = validateBool(sSwitch, respHeader, "switch")
-		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("setSwitch", switch))
+		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("setSwitch", switch))
 		
 class OverVoltageBranch(LnpsControllerBranch):
 	def _get(self, respHeader, navData):
-		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getOverVoltage"))
+		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getOverVoltage"))
 		
 	def _put(self, respHeader, reqData, navData):
 		sOverVoltage = validateSet(reqData, respHeader, "overVoltage")
-		nomVoltage = self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getNomVoltage"))
+		nomVoltage = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getNomVoltage"))
 		overVoltage = validateFloat(sOverVoltage, respHeader, "overVoltage", 0, nomVoltage)
-		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("setOverVoltage", overVoltage))
+		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("setOverVoltage", overVoltage))
 		
 class OverCurrentBranch(LnpsControllerBranch):
 	def _get(self, respHeader, navData):
-		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getOverCurrent"))
+		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getOverCurrent"))
 		
 	def _put(self, respHeader, reqData, navData):
 		sOverCurrent = validateSet(reqData, respHeader, "overCurrent")
-		nomCurrent = self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getNomCurrent"))
+		nomCurrent = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getNomCurrent"))
 		overCurrent = validateFloat(sOverCurrent, respHeader, "overCurrent", 0, nomCurrent)
-		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("setOverCurrent", overCurrent))
+		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("setOverCurrent", overCurrent))
 		
 class StatusBranch(LnpsControllerBranch):	
 	def _get(self, respHeader, navData):
-		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("getStatus"))
+		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getStatus"))
 		
 class DevBranch(ApiBranch):
-	def __init__(self, psThreadContainers):
-		self.psThreadContainers = psThreadContainers
+	def __init__(self, psControllers):
+		self.psControllers = psControllers
 	
 	def _get(self, respHeader, navData):
-		return list(self.psThreadContainers.keys())
+		return list(self.psControllers.keys())
 		
-class LedBranch(LnpsControllerBranch):
+class LedBranch(ApiBranch):
+	def __init__(self, ledController):
+		self.ledController = ledController
+	
 	def _get(self, respHeader, navData):
-		return "getter 4 led"
+		return self.ledController.waitQuery(LedRequest("getter 4 led"))
 		
 	def _put(self, respHeader, reqData, navData):
-		return "putter 4 led"
+		return self.ledController.waitQuery(LedRequest("putter 4 led"))
 		
 class QueryBranch(LnpsControllerBranch):
 	def _post(self, respHeader, reqData, navData):
@@ -160,33 +164,34 @@ class QueryBranch(LnpsControllerBranch):
 		if len(bytes) < 3:
 			respHeader.setError(400)
 			raise ValueError("hex must be 3 bytes long (6 chars)")
-		return self.psThreadContainers[navData["benchNo"]].waitQuery(Request("query", bytes))
+		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("query", bytes))
 		
-def createApi(psThreadContainers):
+def createApi(psControllers, ledController):
 	rootApi = RestAPI()
-	dev = rootApi.add("/api/v1/dev", DevBranch(psThreadContainers))
-	ps = dev.add("<benchNo>/ps")
+	dev = rootApi.add("/api/v1/dev", DevBranch(psControllers))
+	bench = dev.add("<benchNo>")
+	ps = bench.add("ps")
 	general = ps.add("general")
-	general.add("serialNo", SerialNoBranch(psThreadContainers))
-	general.add("manufacturer", ManBranch(psThreadContainers))
-	general.add("partNo", PartNoBranch(psThreadContainers))
-	general.add("swVersion", PartNoBranch(psThreadContainers))
-	general.add("type", TypeBranch(psThreadContainers))
-	general.add("nomVoltage", NomVolatageBranch(psThreadContainers))
-	general.add("nomCurrent", NomCurrentBranch(psThreadContainers))
-	general.add("nomPower", NomPowerBranch(psThreadContainers))
-	general.add("class", ClassBranch(psThreadContainers))
+	general.add("serialNo", SerialNoBranch(psControllers))
+	general.add("manufacturer", ManBranch(psControllers))
+	general.add("partNo", PartNoBranch(psControllers))
+	general.add("swVersion", PartNoBranch(psControllers))
+	general.add("type", TypeBranch(psControllers))
+	general.add("nomVoltage", NomVolatageBranch(psControllers))
+	general.add("nomCurrent", NomCurrentBranch(psControllers))
+	general.add("nomPower", NomPowerBranch(psControllers))
+	general.add("class", ClassBranch(psControllers))
 	status = ps.add("status")
-	status.add("voltage", VoltageBranch(psThreadContainers))
-	status.add("currentLimit", CurrentLimitBranch(psThreadContainers))
-	status.add("conf", ConfBranch(psThreadContainers))
-	status.add("remote", RemoteBranch(psThreadContainers))
-	status.add("switch", SwitchBranch(psThreadContainers))
-	status.add("overVoltage", OverVoltageBranch(psThreadContainers))
-	status.add("overCurrent", OverCurrentBranch(psThreadContainers))
-	status.add("status", StatusBranch(psThreadContainers))
-	dev.add("<benchNo>/led", LedBranch(psThreadContainers))
-	ps.add("query", QueryBranch(psThreadContainers))
+	status.add("voltage", VoltageBranch(psControllers))
+	status.add("currentLimit", CurrentLimitBranch(psControllers))
+	status.add("conf", ConfBranch(psControllers))
+	status.add("remote", RemoteBranch(psControllers))
+	status.add("switch", SwitchBranch(psControllers))
+	status.add("overVoltage", OverVoltageBranch(psControllers))
+	status.add("overCurrent", OverCurrentBranch(psControllers))
+	status.add("status", StatusBranch(psControllers))
+	bench.add("led", LedBranch(ledController))
+	ps.add("query", QueryBranch(psControllers))
 	return rootApi
 	
 def validateSet(arr, respHeader, *keys):

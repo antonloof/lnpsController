@@ -326,19 +326,23 @@ class PowerSupply():
 	def getStatusObj(self):
 		return self.get(ComObject.DEV_STATUS).toPsConf()
 		
-class Request():
+class PsRequest():
 	def __init__(self, func, *data):
 		self.func = func
 		self.data = data
-		self.callback = None
+		self.sem = threading.Semaphore(0)
+		
+	def callback(self, res):
+		self.res = res
+		self.sem.release()
 
-class PsThread(threading.Thread):
-	def __init__(self, ps, queue, sem, lock):
+class PsController(threading.Thread):
+	def __init__(self, ps):
 		threading.Thread.__init__(self)
 		self.ps = ps
-		self.queue = queue
-		self.sem = sem
-		self.lock = lock
+		self.queue = []
+		self.sem = threading.Semaphore(0)
+		self.lock = threading.RLock()
 		
 	def run(self):
 		while True:
@@ -347,26 +351,9 @@ class PsThread(threading.Thread):
 				request = self.queue.pop()
 			request.callback(self.ps.dynamicCall(request.func, request.data))
 		
-class PsThreadContainer():
-	def __init__(self, ps):
-		self.sem = threading.Semaphore(0)
-		self.queue = []
-		self.lock = threading.RLock()
-		self.psThread = PsThread(ps, self.queue, self.sem, self.lock)
-		self.psThread.start()
-		self.waitQuerySem = threading.Semaphore(0)
-		
-	def add(self, request):
+	def waitQuery(self, request):
 		with self.lock:
 			self.queue.append(request)
 		self.sem.release()
-		
-	def waitQuery(self, request):
-		request.callback = self.callback
-		self.add(request)
-		self.waitQuerySem.acquire()
-		return self.response
-		
-	def callback(self, data):
-		self.response = data
-		self.waitQuerySem.release()
+		request.sem.acquire()
+		return request.res

@@ -2,11 +2,23 @@ import threading, json, serial
 from asyncRESTServer import *
 from psconnection import * 
 import restapiDefs
+from ledController import *
 
-CONFIG_FILE = "ps_config.json"
+CONFIG_FILE = "config.json"
 with open(CONFIG_FILE, "r") as f:
 	config = json.load(f)
 
+#validate the config file
+if not "ports" in config:
+	print("Config file does not contain 'ports' key")
+	exit(0)
+if not "ledPort" in config:
+	print("Config file does not contain 'ledPort' key")
+	exit(0)
+if not "powersupplies" in config:
+	print("Config file does not contain 'powersupplies' key")
+	exit(0)
+	
 if len(config["ports"]) != len(config["powersupplies"]):
 	print("Could not start server, config file does not describe an equal amount of powersupplies and ports")
 	exit(0)
@@ -19,14 +31,18 @@ for port in config["ports"]:
 		print("Could not start server, com port", port, "could not be opened")
 		exit(0)
 
-psThreadContainers = {}
+psControllers = {}
 for i in range(len(config["ports"])):
 	for ps in pss:
 		if ps.getSerialNo() == config["powersupplies"][i]["serialNo"]:
-			psThreadContainers[str(config["powersupplies"][i]["dev"])] = PsThreadContainer(ps)
+			controller = PsController(ps)
+			controller.start()
+			psControllers[str(config["powersupplies"][i]["dev"])] = controller
 			break
 			
-rootApi = restapiDefs.createApi(psThreadContainers)	
+ledController = LedController(config["ledPort"])
+ledController.start()
+rootApi = restapiDefs.createApi(psControllers, ledController)	
 
 server = AsyncRESTServer("localhost", 5049, rootApi)
 server.start()

@@ -31,12 +31,13 @@ class ApiBranch():
 		raise ValueError("Not allowed")
 		
 class RestAPI():
-	def __init__(self, parent=None,name=""):
+	def __init__(self, parent=None, name="", isKey=False):
 		self.parent = parent
 		self.children = {}
 		self.apiBranch = None
 		self.isArray = False
-		self.arrayKeyName = ""
+		self.key = None
+		self.isKey = isKey
 		self.name = name
 		
 	def add(self, path, apiBranch=None):
@@ -49,41 +50,35 @@ class RestAPI():
 			return self
 		else:
 			step = steps[0]
-			nextStart = 1
-			self.isArray = step[0] == "<" and step[-1] == ">"
-			if self.isArray:
-				if len(steps) == 1:
-					raise ValueError("Cant add numerical parameter without children")
-				self.arrayKeyName = step[1:-1]
-				step = steps[1]
-				nextStart = 2
+			if step[0] == "<" and step[-1] == ">":
+				step = step[1:-1]
+				self.isArray = True
+				if self.key is None:
+					self.key = RestAPI(self, step, True)
+				elif self.key.name != step:
+					raise ValueError("An array can't have two different key names")
+				return self.key.addList(steps[1:], apiBranch)
 			if not step in self.children:
-				self.children[step] = RestAPI(self, step)
-			return self.children[step].addList(steps[nextStart:], apiBranch)
+				self.children[step] = RestAPI(self, step, False)
+			return self.children[step].addList(steps[1:], apiBranch)
 			
 	def response(self, steps, method, respHeader, reqData, navData):
 		if len(steps) == 0:
 			return self.fetchData(method, respHeader, reqData, navData)
 		else:
 			step = steps[0]
-			nextStart = 1
 			if self.isArray:
-				navData[self.arrayKeyName] = step
-				if len(steps) >= 2:
-					step = steps[1]
-					nextStart = 2
-				else:
-					return self.fetchData(method, respHeader, reqData, navData)
+				navData[self.key.name] = step
+				return self.key.response(steps[1:], method, respHeader, reqData, navData)
 			if step in self.children:
-				return self.children[step].response(steps[nextStart:], method, respHeader, reqData, navData)
+				return self.children[step].response(steps[1:], method, respHeader, reqData, navData)
 			else:
 				respHeader.setError(404)
 				return {}
 				
 	def fetchData(self, method, respHeader, reqData, navData):
-		if self.apiBranch is None or (self.isArray and self.arrayKeyName in navData):
-			if self.isArray and not self.arrayKeyName in navData:
-				#ändra så att den ger alla
+		if self.apiBranch is None:
+			if self.isArray:
 				respHeader.setError(400)
 				raise ValueError("Getting entire lists not supported")
 			res = {}

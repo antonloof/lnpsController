@@ -149,7 +149,7 @@ class ClientThread(threading.Thread):
 		try:
 			content = self.api.executeQuery(reqHeaders, respHeader, reqData)
 			sContent = json.dumps(content)
-			respHeader.add("Content-Length", len(sContent))
 		except ValueError as e:
 			sContent = json.dumps(str(e))
+		respHeader.add("Content-Length", len(sContent))
 		return (respHeader, bytes(sContent, "utf-8"))
