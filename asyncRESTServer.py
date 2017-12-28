@@ -1,4 +1,4 @@
-import threading, socket, json
+import threading, socket, json, os.path
 from urllib import parse
 
 HTTP_ERROR_MESS = {200:"OK", 400:"Bad Request",403:"Forbidden",404:"Not Found",405:"Method Not Allowed",411:"Length Required"}
@@ -22,7 +22,6 @@ class HTTPRequestHeader():
 		self.url = []
 		self.headers = {}
 		self.populated = False
-		self.callback = None
 		
 	def hasHeader(self, h):
 		return h in self.headers
@@ -61,14 +60,10 @@ class HTTPRequestHeader():
 		#split on / and remove empty
 		url = split[1].split("?")
 		self.url = list(filter(None, url[0].split("/")))
-		# parse get parameters for callback
-		if len(url) > 1:
-			for kvp in url[1].split("&"):
-				k,v = kvp.split("=")
-				if k == "callback":
-					self.callback = v
-		
 		return True
+	
+	def __str__(self):
+		return str(self.method) + str(self.url) + "\n" + str(self.headers)
 	
 class HTTPResponseHeader():
 	def __init__(self):
@@ -93,7 +88,7 @@ class ClientThread(threading.Thread):
 		threading.Thread.__init__(self)
 		self.cs = cs
 		self.api = api
-		
+		self.endings = {"js": "application/javascript", "html": "text/html", "css": "text/css"}
 	def run(self):
 		header = HTTPRequestHeader()
 		# fetch and parse the http request
@@ -136,19 +131,62 @@ class ClientThread(threading.Thread):
 			try:
 				reqData = json.loads(str(data, "UTF-8"))
 			except json.decoder.JSONDecodeError:
+				print("ost2")
 				self.cs.send(b"HTTP/1.1 400 Bad Request\r\nContent-Length:0\r\n\r\n")
 				return
 			if reqData == None:
 				print(2)
 				self.cs.send(b"HTTP/1.1 415 Unsupported Media Type\r\n\r\n")
 				return
-			
 		# construct a reply
-		respHeader, content = self.handle(header, reqData)
+		if len(header.url) > 0 and header.url[0] == "api":
+			respHeader, content = self.apiResponse(header, reqData)
+		elif len(header.url) > 0 and header.url[0] == "web":
+			respHeader, content = self.webResponse(header, reqData)
+		else:
+			respHeader = HTTPResponseHeader()
+			respHeader.setError(403)
+			content = b""
+		
 		self.cs.send(respHeader.tohttp() + content)
 		self.cs.close()
 		
-	def handle(self, reqHeaders, reqData):
+	def webResponse(self, reqHeaders, reqData):
+		respHeader = HTTPResponseHeader()
+		respHeader.setError(200)
+		
+		file = reqHeaders.url[-1]
+		if file.count(".") == 0:
+			file = "index.html"
+			folder = os.path.join(*reqHeaders.url)
+		else:
+			folder = os.path.join("", *(reqHeaders.url[:-1]))
+			
+		if folder.count(".") != 0:
+			respHeader.setError(403)
+			return respHeader, b""		
+		
+		if file.count(".") < 1:
+			respHeader.setError(403)
+			return respHeader, b""
+		
+		ending = file.split(".")[1]
+		if ending in self.endings:
+			contentType = self.endings[ending]
+		else:
+			contentType = "text/plain"
+		path = os.path.join(folder, file)
+		if not os.path.isfile(path):
+			respHeader.setError(404)
+			return respHeader, b""
+		
+		with open(path) as f:
+			content = f.read()
+		respHeader.add("Content-Type", contentType)
+		respHeader.add("Content-Length", len(content))
+		return (respHeader, bytes(content, "utf-8"))
+			
+	def apiResponse(self, reqHeaders, reqData):
 		respHeader = HTTPResponseHeader()
 		sContent = ""
 		try:
@@ -157,11 +195,6 @@ class ClientThread(threading.Thread):
 			respHeader.setError(200)
 		except ValueError as e:
 			sContent = json.dumps(str(e))
-
-		if reqHeaders.callback is None:
-			respHeader.add("Content-Type", "application/json")
-		else:
-			respHeader.add("Content-Type", "application/javascript")
-			sContent = "/**/" + reqHeaders.callback + "(" + sContent + ");"
+		respHeader.add("Content-Type", "application/json")
 		respHeader.add("Content-Length", len(sContent))
 		return (respHeader, bytes(sContent, "utf-8"))

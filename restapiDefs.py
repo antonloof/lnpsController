@@ -74,7 +74,7 @@ class VoltageBranch(LnpsControllerBranch):
 			setCurrent = nomCurrent
 		else:
 			setCurrent = nomPower / voltage
-		self.psControllers[navData["benchNo"]].waitQuery(PsRequest("setCurrent", setCurrent))
+		self.psControllers[navData["benchNo"]].waitQuery(PsRequest("setCurrentLimit", setCurrent))
 		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("setVoltage", voltage))
 		
 class CurrentLimitBranch(LnpsControllerBranch):
@@ -82,7 +82,7 @@ class CurrentLimitBranch(LnpsControllerBranch):
 		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getCurrentLimit"))
 		
 	def _put(self, respHeader, reqData, navData):
-		sCurrent = validateSet(reqData, respHeader, "current")
+		sCurrent = validateSet(reqData, respHeader, "currentLimit")
 		nomCurrent = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getNomCurrent"))
 		current = validateFloat(sCurrent, respHeader, "current", 0, nomCurrent)
 		nomPower = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getNomPower"))
@@ -244,7 +244,12 @@ def validateBool(_value, respHeader, name):
 	try:
 		value = int(_value)
 	except ValueError:
-		respHeader.setError(400)
-		raise ValueError(name + " is not a boolean (" + str(_value) + ")")
+		if _value.lower() == "true" or _value.lower() == "on":
+			return 1
+		elif _value.lower() == "false" or _value.lower() == "off":
+			return 0
+		else:
+			respHeader.setError(400)
+			raise ValueError(name + " is not a boolean (" + str(_value) + ")")
 	return value
 		

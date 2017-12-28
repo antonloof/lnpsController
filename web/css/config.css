@@ -1,0 +1,21 @@
+.text:hover {
+	cursor: pointer;
+}
+
+.hidden {
+	display: none;
+}
+
+.message {
+	background: green;
+	margin: 0;
+	padding: 0;
+}
+
+.error {
+	background: red !important;
+}
+
+.message:empty {
+	background: none !important;
+}

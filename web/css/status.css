@@ -120,3 +120,6 @@ p {
 .success {
 	background: lightgreen;
 }
+.grey {
+	color: grey;
+}
