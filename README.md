@@ -1,9 +1,8 @@
 # lnpsController
 
-Rest api + web service for controlling EA powersupplies and leds.
+REST api + web service for controlling EA power supplies and leds.
 
 INSTALL:
 1. Install the libs specified in libs.txt
 2. Create config.json that specifies which com ports, and powers supplies are available, config_example.json contains an example of this file
-3. main.py starts the rest server 
-4. The web files are located in /web, host them however you like 
+3. python main.py starts the REST/web server on port 5049
