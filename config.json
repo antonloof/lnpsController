@@ -1,19 +1,13 @@
 {
 	"ledPort": "COM5",
 	"ports": [
-		"COM3",
-		"COM4"
+		"COM5"
 	],
 	"powersupplies": [
 		{
-			"serialNo": "2694070088",
+			"serialNo": "2723893204",
 			"dev": 1,
 			"name": "Kalle Anka"
-		},
-		{
-			"serialNo": "2710120402",
-			"dev": 2,
-			"name": "Musse Pigg"
 		}
 	]
 }
