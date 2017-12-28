@@ -21,5 +21,5 @@ function loadBenches(available){
 }
 
 function round(v, p) {
-	return Math.round(v * Math.pow(10, p)) / Math.pow(10, p)
+	return Math.round(v * Math.pow(10, p)) / Math.pow(10, p);
 }
