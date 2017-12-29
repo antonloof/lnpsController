@@ -12,6 +12,44 @@ created. This new thread is responsible for handling the new request, it
 parses the http header and body and decides what to do with the request. 
 If the request is for the static web page, the required documents are returned
 otherwise is the request appended to one of the multiple power supply/led threads
-work queue and eventually a result from the thead is converted to json and
-returnt via http to the requester. 
+work queue and eventually a result from the thread is converted to json and
+returned via http to the requester. 
 
+=== The structure of the api === 
+A few things must be cleared up before showing the api tree
+	1. If you request an object that is not at the end of a branch it will 
+		return an object with all the subobjects in it. 
+	2. The current currently delivered by the power supply is located 
+		in the api/v1/dev/<no>/status/status object. 
+	3. A pw is required for setting data in the power supply, this is to 
+		prevent automatic scrips controlling a power supply it should not.
+		
+api
+	v1
+		dev [get, array of all valid <benchNo>]
+			<benchNo>
+				ps
+					general
+						serialNo [get, string]
+						manufacturer [get, string]
+						partNo [get, string]
+						swVersion [get, string]
+						type [get, string]
+						nomVoltage [get, float]
+						nomCurrent [get, float]
+						nomPower [get, float]
+						class [get, object]
+					status
+						voltage [get put, float]
+						currentLimit [get put, float]
+						conf [get, object]
+						remote [get put, bool]
+						switch [get put, bool]
+						overVoltage [get put, float]
+						overCurrent [get put, float]
+						status [get, object]
+					query [post, hex-string]
+					pw [get, string]
+				name [get, string]
+				teststatus [get put, string]
+				led [get put, NOT IMPLEMENTED]
