@@ -64,7 +64,10 @@ class VoltageBranch(LnpsControllerBranch):
 		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getVoltage"))
 		
 	def _put(self, respHeader, reqData, navData):
-		sVoltage = validateSet(reqData, respHeader, "voltage")
+		sVoltage, pw = validateSet(reqData, respHeader, "voltage", "pw")
+		if not self.psControllers[navData["benchNo"]].validatePw(pw):
+			respHeader.setError(401)
+			raise ValueError("Wrong password")
 		nomVoltage = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getNomVoltage"))
 		nomPower = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getNomPower"))
 		nomCurrent = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getNomCurrent"))
@@ -82,7 +85,10 @@ class CurrentLimitBranch(LnpsControllerBranch):
 		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getCurrentLimit"))
 		
 	def _put(self, respHeader, reqData, navData):
-		sCurrent = validateSet(reqData, respHeader, "currentLimit")
+		sCurrent, pw = validateSet(reqData, respHeader, "currentLimit", "pw")
+		if not self.psControllers[navData["benchNo"]].validatePw(pw):
+			respHeader.setError(401)
+			raise ValueError("Wrong password")
 		nomCurrent = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getNomCurrent"))
 		current = validateFloat(sCurrent, respHeader, "current", 0, nomCurrent)
 		nomPower = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getNomPower"))
@@ -101,7 +107,10 @@ class RemoteBranch(LnpsControllerBranch):
 		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getRemote"))
 		
 	def _put(self, respHeader, reqData, navData):
-		sRemote = validateSet(reqData, respHeader, "remote")
+		sRemote, pw = validateSet(reqData, respHeader, "remote", "pw")
+		if not self.psControllers[navData["benchNo"]].validatePw(pw):
+			respHeader.setError(401)
+			raise ValueError("Wrong password")
 		remote = validateBool(sRemote, respHeader, "remote")
 		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("setRemote", remote))
 		
@@ -110,7 +119,10 @@ class SwitchBranch(LnpsControllerBranch):
 		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getSwitch"))
 	
 	def _put(self, respHeader, reqData, navData):
-		sSwitch = validateSet(reqData, respHeader, "switch")
+		sSwitch, pw = validateSet(reqData, respHeader, "switch", "pw")
+		if not self.psControllers[navData["benchNo"]].validatePw(pw):
+			respHeader.setError(401)
+			raise ValueError("Wrong password")
 		switch = validateBool(sSwitch, respHeader, "switch")
 		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("setSwitch", switch))
 		
@@ -119,7 +131,10 @@ class OverVoltageBranch(LnpsControllerBranch):
 		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getOverVoltage"))
 		
 	def _put(self, respHeader, reqData, navData):
-		sOverVoltage = validateSet(reqData, respHeader, "overVoltage")
+		sOverVoltage, pw = validateSet(reqData, respHeader, "overVoltage", "pw")
+		if not self.psControllers[navData["benchNo"]].validatePw(pw):
+			respHeader.setError(401)
+			raise ValueError("Wrong password")
 		nomVoltage = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getNomVoltage"))
 		overVoltage = validateFloat(sOverVoltage, respHeader, "overVoltage", 0, nomVoltage)
 		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("setOverVoltage", overVoltage))
@@ -129,7 +144,10 @@ class OverCurrentBranch(LnpsControllerBranch):
 		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getOverCurrent"))
 		
 	def _put(self, respHeader, reqData, navData):
-		sOverCurrent = validateSet(reqData, respHeader, "overCurrent")
+		sOverCurrent = validateSet(reqData, respHeader, "overCurrent", "pw")
+		if not self.psControllers[navData["benchNo"]].validatePw(pw):
+			respHeader.setError(401)
+			raise ValueError("Wrong password")
 		nomCurrent = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getNomCurrent"))
 		overCurrent = validateFloat(sOverCurrent, respHeader, "overCurrent", 0, nomCurrent)
 		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("setOverCurrent", overCurrent))
@@ -157,7 +175,10 @@ class LedBranch(ApiBranch):
 		
 class QueryBranch(LnpsControllerBranch):
 	def _post(self, respHeader, reqData, navData):
-		validateSet(reqData, respHeader, "hex")
+		validateSet(reqData, respHeader, "hex", "pw")
+		if not self.psControllers[navData["benchNo"]].validatePw(pw):
+			respHeader.setError(401)
+			raise ValueError("Wrong password")
 		try:
 			bytes = bytearray.fromhex(reqData["hex"])
 		except ValueError:
@@ -169,22 +190,26 @@ class QueryBranch(LnpsControllerBranch):
 		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("query", bytes))
 		
 class TestStatusBranch(LnpsControllerBranch):
-		def __init__(self, psControllers, testStatusController):
-			super().__init__(psControllers)
-			self.testStatusController = testStatusController
+	def __init__(self, psControllers, testStatusController):
+		super().__init__(psControllers)
+		self.testStatusController = testStatusController
+
+	def _get(self, respHeader, navData):
+		serNo = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getSerialNo"))
+		return self.testStatusController.waitQuery(TestStatusRequest(TYPE_GET, serNo))
 	
-		def _get(self, respHeader, navData):
-			serNo = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getSerialNo"))
-			return self.testStatusController.waitQuery(TestStatusRequest(TYPE_GET, serNo))
-		
-		def _put(self, respHeader, reqData, navData):
-			status = html.escape(validateSet(reqData, respHeader, "teststatus"))
-			serNo = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getSerialNo"))
-			return self.testStatusController.waitQuery(TestStatusRequest(TYPE_SET, serNo, status))
+	def _put(self, respHeader, reqData, navData):
+		status = html.escape(validateSet(reqData, respHeader, "teststatus"))
+		serNo = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getSerialNo"))
+		return self.testStatusController.waitQuery(TestStatusRequest(TYPE_SET, serNo, status))
 		
 class NameBranch(LnpsControllerBranch):
-		def _get(self, respHeader, navData):
-			return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getName"))
+	def _get(self, respHeader, navData):
+		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getName"))
+	
+class PwBranch(LnpsControllerBranch):
+	def _get(self, reqData, navData):
+		return self.psControllers[navData["benchNo"]].getpw()
 		
 def createApi(psControllers, ledController, testStatusController):
 	rootApi = RestAPI()
@@ -212,6 +237,7 @@ def createApi(psControllers, ledController, testStatusController):
 	status.add("status", StatusBranch(psControllers))
 	bench.add("led", LedBranch(ledController))
 	ps.add("query", QueryBranch(psControllers))
+	ps.add("pw", PwBranch(psControllers))
 	bench.add("name", NameBranch(psControllers))
 	bench.add("teststatus", TestStatusBranch(psControllers, testStatusController))
 	return rootApi

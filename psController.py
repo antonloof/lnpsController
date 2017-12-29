@@ -342,9 +342,16 @@ class PsRequest(Request):
 		self.sem.release()
 
 class PsController(Controller):
-	def __init__(self, ps):
+	def __init__(self, ps, pw):
 		super().__init__()
 		self.ps = ps
+		self.pw = pw
 		
 	def process(self, req):
 		return self.ps.dynamicCall(req.func, req.data)
+		
+	def getpw(self):
+		return self.pw
+		
+	def validatePw(self, pw):
+		return pw == self.pw

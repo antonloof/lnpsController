@@ -1,0 +1,17 @@
+=== What it is ===
+This project is a combinaton of a file serving web server and a rest api.
+It serves both json data from power supplies and led (not implemented) and
+a basic web interface that demos how everything to use the api
+
+=== How it all works ===
+The file main.py starts both the rest api and web server on the port 5049
+(configurable in config.json). On startup a thread is started for every power 
+supply as well as one for listening for socket connections and one for 
+controlling the leds. Once a connection gets established another thread gets
+created. This new thread is responsible for handling the new request, it 
+parses the http header and body and decides what to do with the request. 
+If the request is for the static web page, the required documents are returned
+otherwise is the request appended to one of the multiple power supply/led threads
+work queue and eventually a result from the thead is converted to json and
+returnt via http to the requester. 
+

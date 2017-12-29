@@ -19,6 +19,9 @@ if not "ledPort" in config:
 if not "powersupplies" in config:
 	print("Config file does not contain 'powersupplies' key")
 	exit(0)
+if not "serverPort" in config:
+	print("Config file does not contain 'serverPort' key")
+	exit(0)
 	
 if len(config["ports"]) != len(config["powersupplies"]):
 	print("Could not start server, config file does not describe an equal amount of powersupplies and ports")
@@ -36,7 +39,7 @@ psControllers = {}
 for i in range(len(config["ports"])):
 	for ps in pss:
 		if ps.getSerialNo() == config["powersupplies"][i]["serialNo"]:
-			controller = PsController(ps)
+			controller = PsController(ps, config["powersupplies"][i]["pw"])
 			controller.start()
 			ps.name = config["powersupplies"][i]["name"]
 			psControllers[str(config["powersupplies"][i]["dev"])] = controller
@@ -48,5 +51,5 @@ testStatusController = TestStatusController()
 testStatusController.start()
 rootApi = restapiDefs.createApi(psControllers, ledController, testStatusController)	
 
-server = AsyncRESTServer("localhost", 5049, rootApi)
+server = AsyncRESTServer("localhost", config["serverPort"], rootApi)
 server.start()

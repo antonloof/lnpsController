@@ -86,57 +86,66 @@ $(function() {
 					$(this).children(".text").text(name + " (" + text + ")");
 				}
 			});
-			for (var j = 0; j < inputs.length; j++) {
-				var row = $("<tr></tr>");
-				row.append("<th>" + inputs[j].displayName + "</th>");
-				
-				var inputtd = $('<td></td>');
-				var input = $('<input name="' + inputs[j].name + '" />');
-				inputtd.append(input);
-				row.append(inputtd)
-				
-				var buttontd = $("<td></td>");
-				var button = $("<button>Update</button>");
-				buttontd.append(button);
-				row.append(buttontd);
-				
-				if (!inputs[j].noget) {
-					$.ajax({
-						url: "/api/v1/dev/" + devs[i] + "/" + inputs[j].url, 
-						context: input,
-						dataType: "json",
-						success: function (res) {
-							$(this).val(res);
+			
+			$.ajax({
+				url: "/api/v1/dev/" + devs[i] + "/ps/pw",
+				context: devs[i],
+				dataType: "json",
+				success: function (pw) {
+					var dev = $(this)[0];
+					for (var j = 0; j < inputs.length; j++) {
+						var row = $("<tr></tr>");
+						row.append("<th>" + inputs[j].displayName + "</th>");
+						
+						var inputtd = $('<td></td>');
+						var input = $('<input name="' + inputs[j].name + '" />');
+						inputtd.append(input);
+						row.append(inputtd)
+						
+						var buttontd = $("<td></td>");
+						var button = $("<button>Update</button>");
+						buttontd.append(button);
+						row.append(buttontd);
+						if (!inputs[j].noget) {
+							$.ajax({
+								url: "/api/v1/dev/" + dev + "/" + inputs[j].url, 
+								context: input,
+								dataType: "json",
+								success: function (res) {
+									$(this).val(res);
+								}
+							});
 						}
+						
+						button.click({input: inputs[j], dev: dev, pw: pw}, function (evt) {
+							var value = $(this).parent().parent().find('input[name="' + evt.data.input.name + '"]').val();
+							var message = $(this).parent().parent().find(".message");
+							set("/api/v1/dev/" + evt.data.dev + "/" + evt.data.input.url, 
+								{
+									[evt.data.input.keyName]: value,
+									"pw": evt.data.pw
+								}, 
+								message, 
+								evt.data.input.method == undefined ? "PUT" : evt.data.input.method,
+								function (resp) {
+									$(this).removeClass("error");
+									$(this).text(JSON.stringify(resp));
+								}, function (jqxhr, textStatus, errorThrown) {
+									$(this).addClass("error");
+									$(this).text(jqxhr.responseJSON);
+								}
+							);
+						});
+						
+						row.append('<td class="message"></td>')
+						item.children("table").append(row);
+					}
+					item.children(".text").click(function () {
+						$(this).parent().children("table").toggleClass("hidden")
 					});
+					$("#devList").append(item);
 				}
-				
-				button.click({input: inputs[j], dev: devs[i]}, function (evt) {
-					var value = $(this).parent().parent().find('input[name="' + evt.data.input.name + '"]').val();
-					var message = $(this).parent().parent().find(".message");
-					set("/api/v1/dev/" + evt.data.dev + "/" + evt.data.input.url, 
-						{
-							[evt.data.input.keyName]: value
-						}, 
-						message, 
-						evt.data.input.method == undefined ? "PUT" : evt.data.input.method,
-						function (resp) {
-							$(this).removeClass("error");
-							$(this).text(JSON.stringify(resp));
-						}, function (jqxhr, textStatus, errorThrown) {
-							$(this).addClass("error");
-							$(this).text(jqxhr.responseJSON);
-						}
-					);
-				});
-				
-				row.append('<td class="message"></td>')
-				item.children("table").append(row);
-			}
-			item.children(".text").click(function () {
-				$(this).parent().children("table").toggleClass("hidden")
-			});
-			$("#devList").append(item);
+			});			
 		}
 	});
 });
