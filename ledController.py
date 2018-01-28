@@ -18,6 +18,7 @@ class LedController(Controller):
 		self.serial = serial.Serial(port, BAUD_RATE, timeout=1)
 		
 	def process(self, req):
+		self.serial.reset_input_buffer() # the led controller sends bs serial data sometimes
 		if req.isGet:
 			firstChar = "G"
 		else:
