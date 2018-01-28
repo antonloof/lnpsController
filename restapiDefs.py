@@ -10,13 +10,31 @@ class LnpsControllerBranch(ApiBranch):
 		self.psControllers = psControllers
 		
 	def get(self, respHeader, navData):
+		if navData["benchNo"] in self.psControllers and self.psControllers[navData["benchNo"]].hasPs():
+			return self._get(respHeader, navData)
+		else:
+			respHeader.setError(404)
+			raise ValueError("Bench no " + navData["benchNo"] + " does not have a powersupply")
+			
+	def put(self, respHeader, reqData, navData):
+		if navData["benchNo"] in self.psControllers and self.psControllers[navData["benchNo"]].hasPs():
+			return self._put(respHeader, reqData, navData)
+		else:
+			respHeader.setError(404)
+			raise ValueError("Bench no " + navData["benchNo"] + " does not have a powersupply")
+	
+class NoPsRequiredBranch(ApiBranch):
+	def __init__(self, psControllers):
+		self.psControllers = psControllers
+		
+	def get(self, respHeader, navData):	
 		if navData["benchNo"] in self.psControllers:
 			return self._get(respHeader, navData)
 		else:
 			respHeader.setError(404)
 			raise ValueError("Bench no " + navData["benchNo"] + " does not exist")
-			
-	def put(self, respHeader, reqData, navData):
+	
+	def put(self, respHeader, reqData, navData):	
 		if navData["benchNo"] in self.psControllers:
 			return self._put(respHeader, reqData, navData)
 		else:
@@ -163,15 +181,19 @@ class DevBranch(ApiBranch):
 	def _get(self, respHeader, navData):
 		return list(self.psControllers.keys())
 		
-class LedBranch(ApiBranch):
-	def __init__(self, ledController):
+class LedBranch(NoPsRequiredBranch):
+	def __init__(self, ledController, psControllers):
+		super().__init__(psControllers)
 		self.ledController = ledController
-	
-	def _get(self, respHeader, navData):
-		return self.ledController.waitQuery(LedRequest("getter 4 led"))
 		
+	def _get(self, respHeader, navData):
+		psController = self.psControllers[navData["benchNo"]]
+		return self.ledController.waitQuery(LedRequest(True, psController.row, psController.col))
+			
 	def _put(self, respHeader, reqData, navData):
-		return self.ledController.waitQuery(LedRequest("putter 4 led"))
+		psController = self.psControllers[navData["benchNo"]]
+		mode = validateSet(reqData, respHeader, "mode")
+		return self.ledController.waitQuery(LedRequest(False, psController.row, psController.col, mode))
 		
 class QueryBranch(LnpsControllerBranch):
 	def _post(self, respHeader, reqData, navData):
@@ -189,25 +211,25 @@ class QueryBranch(LnpsControllerBranch):
 			raise ValueError("hex must be 3 bytes long (6 chars)")
 		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("query", bytes))
 		
-class TestStatusBranch(LnpsControllerBranch):
+class TestStatusBranch(NoPsRequiredBranch):
 	def __init__(self, psControllers, testStatusController):
 		super().__init__(psControllers)
 		self.testStatusController = testStatusController
 
 	def _get(self, respHeader, navData):
-		serNo = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getSerialNo"))
-		return self.testStatusController.waitQuery(TestStatusRequest(TYPE_GET, serNo))
-	
+		id = self.psControllers[navData["benchNo"]].getId()
+		return self.testStatusController.waitQuery(TestStatusRequest(TYPE_GET, id))
+		
 	def _put(self, respHeader, reqData, navData):
 		status = html.escape(validateSet(reqData, respHeader, "teststatus"))
-		serNo = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getSerialNo"))
-		return self.testStatusController.waitQuery(TestStatusRequest(TYPE_SET, serNo, status))
+		id = self.psControllers[navData["benchNo"]].getId()
+		return self.testStatusController.waitQuery(TestStatusRequest(TYPE_SET, id, status))
 		
-class NameBranch(LnpsControllerBranch):
+class NameBranch(NoPsRequiredBranch):
 	def _get(self, respHeader, navData):
-		return self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getName"))
+		return self.psControllers[navData["benchNo"]].getName()
 	
-class PwBranch(LnpsControllerBranch):
+class PwBranch(NoPsRequiredBranch):
 	def _get(self, reqData, navData):
 		return self.psControllers[navData["benchNo"]].getpw()
 		
@@ -235,9 +257,9 @@ def createApi(psControllers, ledController, testStatusController):
 	status.add("overVoltage", OverVoltageBranch(psControllers))
 	status.add("overCurrent", OverCurrentBranch(psControllers))
 	status.add("status", StatusBranch(psControllers))
-	bench.add("led", LedBranch(ledController))
+	bench.add("led", LedBranch(ledController, psControllers))
 	ps.add("query", QueryBranch(psControllers))
-	ps.add("pw", PwBranch(psControllers))
+	bench.add("pw", PwBranch(psControllers))
 	bench.add("name", NameBranch(psControllers))
 	bench.add("teststatus", TestStatusBranch(psControllers, testStatusController))
 	return rootApi
@@ -266,6 +288,18 @@ def validateFloat(_value, respHeader, name, min, max):
 		raise ValueError(name + " is not between " + str(min) + " and " + str(max) + "(" + str(value) + ")")	
 	return value
 		
+def validateInt(_value, respHeader, name, min, max):
+	try:
+		value = int(_value)
+	except ValueError:
+		respHeader.setError(400)
+		raise ValueError(name + " is not a float (" + str(_value) + ")")
+	
+	if not (min <= value <= max):
+		respHeader.setError(400)
+		raise ValueError(name + " is not between " + str(min) + " and " + str(max) + "(" + str(value) + ")")	
+	return value	
+	
 def validateBool(_value, respHeader, name):
 	try:
 		value = int(_value)

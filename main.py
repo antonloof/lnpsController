@@ -10,22 +10,11 @@ with open(CONFIG_FILE, "r") as f:
 	config = json.load(f)
 
 #validate the config file
-if not "ports" in config:
-	print("Config file does not contain 'ports' key")
-	exit(0)
-if not "ledPort" in config:
-	print("Config file does not contain 'ledPort' key")
-	exit(0)
-if not "powersupplies" in config:
-	print("Config file does not contain 'powersupplies' key")
-	exit(0)
-if not "serverPort" in config:
-	print("Config file does not contain 'serverPort' key")
-	exit(0)
-	
-if len(config["ports"]) != len(config["powersupplies"]):
-	print("Could not start server, config file does not describe an equal amount of powersupplies and ports")
-	exit(0)
+configKeys = ["ledPort", "benches", "ports", "serverPort"]
+for key in configKeys:
+	if not key in config:
+		print("Config file does not contain key", key)
+		exit(0)
 
 pss = []
 for port in config["ports"]:
@@ -35,21 +24,24 @@ for port in config["ports"]:
 		print("Could not start server, com port", port, "could not be opened")
 		exit(0)
 
-psControllers = {}
-for i in range(len(config["ports"])):
-	for ps in pss:
-		if ps.getSerialNo() == config["powersupplies"][i]["serialNo"]:
-			controller = PsController(ps, config["powersupplies"][i]["pw"])
-			controller.start()
-			ps.name = config["powersupplies"][i]["name"]
-			psControllers[str(config["powersupplies"][i]["dev"])] = controller
-			break
+benches = {}
+
+for i in range(len(config["benches"])):
+	bench = config["benches"][i]
+	controller = PsController(bench["pw"], bench["row"], bench["col"], bench["id"], bench["name"])
+	if "ps" in config["benches"][i]:
+		for ps in pss:
+			if ps.getSerialNo() == bench["ps"]:
+				controller.ps = ps
+				controller.start()
+			
+	benches[config["benches"][i]["id"]] = controller
 			
 ledController = LedController(config["ledPort"])
 ledController.start()
 testStatusController = TestStatusController()
 testStatusController.start()
-rootApi = restapiDefs.createApi(psControllers, ledController, testStatusController)	
+rootApi = restapiDefs.createApi(benches, ledController, testStatusController)	
 
 server = AsyncRESTServer("localhost", config["serverPort"], rootApi)
 server.start()

@@ -1,15 +1,17 @@
 {
-	"ledPort": "COM5",
+	"ledPort": "COM6",
+	"benches": [
+		{
+			"id": "1",
+			"name": "Kalle Anka",
+			"pw": "1234",
+			"ps": "2694070088",
+			"row": 1,
+			"col": 1
+		}
+	],
 	"ports": [
 		"COM7"
-	],
-	"powersupplies": [
-		{
-			"serialNo": "2694070088",
-			"dev": 1,
-			"name": "Kalle Anka",
-			"pw": "1234"
-		}
 	],
 	"serverPort": 5049
 }

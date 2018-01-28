@@ -45,7 +45,7 @@ var inputs = [
 		displayName: "Led",
 		name: "led",
 		url: "led",
-		keyName: "led",
+		keyName: "mode",
 		noget: false
 	}, {
 		displayName: "Query",
@@ -88,7 +88,7 @@ $(function() {
 			});
 			
 			$.ajax({
-				url: "/api/v1/dev/" + devs[i] + "/ps/pw",
+				url: "/api/v1/dev/" + devs[i] + "/pw",
 				context: devs[i],
 				dataType: "json",
 				success: function (pw) {

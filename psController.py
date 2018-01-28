@@ -171,7 +171,6 @@ class PowerSupply():
 		self.nomCurrent = None
 		self.nomVoltage = None
 		self.nomPower = None
-		self.name = ""
 		
 	def recv(self, expectedObj):
 		startDelim = int.from_bytes(self.serial.read(), 'big')
@@ -342,10 +341,14 @@ class PsRequest(Request):
 		self.sem.release()
 
 class PsController(Controller):
-	def __init__(self, ps, pw):
+	def __init__(self, pw, row, col, id, name):
 		super().__init__()
-		self.ps = ps
+		self.ps = None
 		self.pw = pw
+		self.row = row
+		self.col = col
+		self.id = id
+		self.name = name
 		
 	def process(self, req):
 		return self.ps.dynamicCall(req.func, req.data)
@@ -355,3 +358,12 @@ class PsController(Controller):
 		
 	def validatePw(self, pw):
 		return pw == self.pw
+		
+	def hasPs(self):
+		return self.ps != None
+		
+	def getId(self):
+		return self.id
+		
+	def getName(self):
+		return self.name
