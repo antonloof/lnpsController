@@ -3,3 +3,5 @@
 web/lib/*
 config.json
 config.json
+*.bat
+config.json

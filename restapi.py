@@ -74,7 +74,7 @@ class RestAPI():
 				return self.children[step].response(steps[1:], method, respHeader, reqData, navData)
 			else:
 				respHeader.setError(404)
-				return {}
+				return None
 				
 	def fetchData(self, method, respHeader, reqData, navData):
 		if self.apiBranch is None:
@@ -91,16 +91,19 @@ class RestAPI():
 				except ValueError as e:
 					res[k] = str(e)
 			return res
-		if method == "GET":
-			return self.apiBranch.get(respHeader, navData)
-		elif method == "POST":
-			return self.apiBranch.post(respHeader, reqData, navData)
-		elif method == "PUT":
-			return self.apiBranch.put(respHeader, reqData, navData)
-		elif method == "DELETE":
-			return self.apiBranch.delete(respHeader, navData)
 		
+		try:
+			if method == "GET":
+				return self.apiBranch.get(respHeader, navData)
+			elif method == "POST":
+				return self.apiBranch.post(respHeader, reqData, navData)
+			elif method == "PUT":
+				return self.apiBranch.put(respHeader, reqData, navData)
+			elif method == "DELETE":
+				return self.apiBranch.delete(respHeader, navData)
+		except ValueError as e:
+			respHeader.setError(400)
+			return str(e)
+			
 	def executeQuery(self, reqHeaders, respHeader, reqData):
 		return self.response(reqHeaders.url, reqHeaders.method, respHeader, reqData, {})
-
-

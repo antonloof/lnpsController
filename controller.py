@@ -4,10 +4,15 @@ class Request:
 	def __init__(self):
 		self.res = None
 		self.sem = threading.Semaphore(0)
+		self.error = ""
 		
 	def callback(self, res):
 		self.res = res
 		self.sem.release()
+		
+	def throwError(self):
+		if self.error != "":
+			raise(ValueError(self.error))
 		
 class Controller(threading.Thread):
 	def __init__(self):
@@ -28,6 +33,7 @@ class Controller(threading.Thread):
 			self.queue.append(req)
 		self.sem.release() 
 		req.sem.acquire()
+		req.throwError()
 		return req.res
 		
 	def process(self, req):

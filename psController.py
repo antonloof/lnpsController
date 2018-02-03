@@ -1,7 +1,5 @@
 import threading, serial, time, struct, sys
 from controller import *
-REQUEST_GET = 0
-REQUEST_SET = 0
 
 ## ps communication constants
 MSG_TYPE_SEND = 0xC0
@@ -115,12 +113,10 @@ class PsResponse():
 			"data": data.hex(),
 			"checksum": checksum.hex()
 		}
+		
 	def forceLength(self, length):
 		if len(self.data) != length:
-			self.add("The data does not meet the required length, is " + len(self.data) + " should be " + length + " bytes") 
-	
-	def clean(self):
-		return len(self.errors) == 0
+			raise(ValueError("The data does not meet the required length, is " + str(len(self.data)) + " should be " + str(length) + " bytes"))
 	
 	def toString(self):
 		return str(self.data[:-1], "ascii")
@@ -144,15 +140,16 @@ class PsResponse():
 		conf.voltage = int.from_bytes(self.data[2:4], byteorder='big')
 		conf.current = int.from_bytes(self.data[4:6], byteorder='big')
 		return conf
-	
+		
 	def toInt16(self):
 		self.forceLength(2)
 		return int.from_bytes(self.data, byteorder='big')
 		
 	def getError(self):
-		if len(self.errors) > 0:
-			return self.errors[0]
-		return ""
+		if len(self.errors) == 0 or (len(self.errors) == 1 and self.errors[0] == PS_ERRORS[0]):
+			pass
+		else:
+			raise ValueError(self.errors[0])
 		
 	def toClass(self):
 		iClass = self.toInt16()
@@ -166,30 +163,68 @@ class PsResponse():
 		
 class PowerSupply():
 	def __init__(self, port):
-		self.serial = serial.Serial(port, BAUD_RATE, timeout=1, parity=serial.PARITY_ODD)
+		self.port = port
 		self.lastSend = 0
+		self.tryConnectSerial()
+		
+	def tryConnectSerial(self):
 		self.nomCurrent = None
 		self.nomVoltage = None
 		self.nomPower = None
+		self.isConnected = False
+		
+		try:
+			self.serial = serial.Serial(self.port, BAUD_RATE, timeout=1, parity=serial.PARITY_ODD)
+		except serial.serialutil.SerialException:
+			print("WARNING: Could not connect to power supply at port", self.port)
+			return False
+			
+		print("INFO: Contact with power supply at port", self.port, "established")
+		self.isConnected = True
+		return True
 		
 	def recv(self, expectedObj):
-		startDelim = int.from_bytes(self.serial.read(), 'big')
-		deviceNode = int.from_bytes(self.serial.read(), 'big')
-		obj = int.from_bytes(self.serial.read(), 'big')
-		data = self.serial.read((startDelim & 0xF) + 1)
-		checksum = self.serial.read(2)
 		resp = PsResponse()
+		if not self.isConnected:
+			if not self.tryConnectSerial():
+				raise(ValueError("No serial connection with power supply"))
+	
+		try:
+			startDelim = int.from_bytes(self.serial.read(), 'big')
+			deviceNode = int.from_bytes(self.serial.read(), 'big')
+			obj = int.from_bytes(self.serial.read(), 'big')
+			data = self.serial.read((startDelim & 0xF) + 1)
+			checksum = self.serial.read(2)
+		except serial.serialutil.SerialException:
+			print("WARNING: Lost contact with power supply on port", self.port, "on read")
+			if not self.tryConnectSerial():
+				raise(ValueError("No serial connection with power supply"))
+			else:
+				return self.recv(expectedObj)
+				
 		resp.parse(startDelim, deviceNode, data, checksum, obj, expectedObj)
 		return resp
 			
 	def send(self, startdelim, deviceNode, obj, data=b''):
+		if not self.isConnected:
+			if not self.tryConnectSerial():
+				raise(ValueError("No serial connection with power supply"))
+			
 		# wait for some time to pass in order not to bombard the ps with requests
 		timeSinceLastSent = time.time() - self.lastSend
 		if timeSinceLastSent < TRANSMISSION_LATENCY: 
 			time.sleep(TRANSMISSION_LATENCY - timeSinceLastSent)
 			
 		header = createHeader(startdelim, deviceNode, obj)
-		self.serial.write(header + data + calculateChecksum(header, data))
+		
+		try:
+			self.serial.write(header + data + calculateChecksum(header, data))
+		except serial.serialutil.SerialException:
+			print("WARNING: Lost contact with power supply on port", self.port, "during write")
+			if not self.tryConnectSerial():
+				raise(ValueError("No serial connection with power supply"))
+			else:
+				self.send(startDelim, deviceNode, obj, data)
 		
 	def dynamicCall(self, func, data=[]):
 		def funcNotFound(*args, **kwargs):
@@ -334,11 +369,6 @@ class PsRequest(Request):
 		super().__init__()
 		self.func = func
 		self.data = data
-		self.sem = threading.Semaphore(0)
-		
-	def callback(self, res):
-		self.res = res
-		self.sem.release()
 
 class PsController(Controller):
 	def __init__(self, pw, row, col, id, name):
@@ -351,7 +381,10 @@ class PsController(Controller):
 		self.name = name
 		
 	def process(self, req):
-		return self.ps.dynamicCall(req.func, req.data)
+		try:
+			return self.ps.dynamicCall(req.func, req.data)
+		except ValueError as e:
+			req.error = str(e)
 		
 	def getpw(self):
 		return self.pw
@@ -367,3 +400,7 @@ class PsController(Controller):
 		
 	def getName(self):
 		return self.name
+		
+	def setPs(self, ps):
+		self.ps = ps
+		self.start()

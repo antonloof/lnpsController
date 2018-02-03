@@ -1,14 +1,15 @@
 {
-	"ledPort": "COM6",
+	"ledPort": "COM5",
 	"benches": [
 		{
+			"ps": "2633370194",
 			"id": "1",
 			"name": "Kalle Anka",
 			"pw": "1234",
 			"row": 1,
-			"col": 1
+			"col": 3
 		}
 	],
-	"ports": [],
+	"ports": ["COM7"],
 	"serverPort": 5049
 }

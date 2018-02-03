@@ -15,10 +15,23 @@ class LedRequest(Request):
 class LedController(Controller):
 	def __init__(self, port):
 		super().__init__()
-		self.serial = serial.Serial(port, BAUD_RATE, timeout=1)
+		self.port = port
+		self.tryConnectSerial()
+		
+		
+	def tryConnectSerial(self):
+		self.isConnected = False
+		try:
+			self.serial = serial.Serial(self.port, BAUD_RATE, timeout=1)
+		except serial.serialutil.SerialException:
+			print("WARNING: Could not connect to led controller at port", self.port)
+			return False
+		self.isConnected = True
+		return True
 		
 	def process(self, req):
 		self.serial.reset_input_buffer() # the led controller sends bs serial data sometimes
+		
 		if req.isGet:
 			firstChar = "G"
 		else:
@@ -27,15 +40,32 @@ class LedController(Controller):
 		if not req.isGet:
 			mess += ":" + str(req.mode)
 		mess += "\n"
-		self.serial.write(mess.encode("ascii"))
+		
+		try:
+			self.serial.write(mess.encode("ascii"))
+		except serial.serialutil.SerialException:
+			print("WARNING: Serial connection with led controller on port", self.port, "lost (write)")
+			if not self.tryConnectSerial():
+				req.error = "No serial connection with led controller"
+				return
+			else:
+				return self.process(req)
 
 		resp = b""
 		prevChar = b''
-		nextChar = self.serial.read()
-		while nextChar != b'\n' and prevChar != b'\r':
-			resp += nextChar
-			prevChar = nextChar
+		try:
 			nextChar = self.serial.read()
+			while nextChar != b'\n' and prevChar != b'\r':
+				resp += nextChar
+				prevChar = nextChar
+				nextChar = self.serial.read()
+		except serial.serialutil.SerialException:
+			print("WARNING: Serial connection with led controller on port", self.port, "lost (read)")
+			if not self.tryConnectSerial():
+				req.error = "No serial connection with led controller"
+				return
+			else:
+				return self.process(req)
 		
 		resp = resp.decode("ascii")
 		

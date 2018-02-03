@@ -1,14 +1,14 @@
 import threading, socket, json, os.path
 from urllib import parse
 
-HTTP_ERROR_MESS = {200:"OK", 400:"Bad Request",403:"Forbidden",404:"Not Found",405:"Method Not Allowed",411:"Length Required"}
+HTTP_ERROR_MESS = {200:"OK", 400:"Bad Request",403:"Forbidden",404:"Not Found",405:"Method Not Allowed",411:"Length Required",415:"Unsupported Media Type"}
 
 class AsyncRESTServer():
 	def __init__(self, port, api):
 		self.api = api
 		self.serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		#self.serversocket.bind((socket.gethostname(), port))
-		self.serversocket.bind(("localhost", port))		
+		self.serversocket.bind(("", port))		
 
 	def start(self):		
 		self.serversocket.listen(5)
@@ -84,12 +84,16 @@ class HTTPResponseHeader():
 	def add(self, k, v):
 		self.headers[k] = str(v)
 		
+	def isOk(self):
+		return self.error == 200
+		
 class ClientThread(threading.Thread):
 	def __init__(self, cs, api):
 		threading.Thread.__init__(self)
 		self.cs = cs
 		self.api = api
 		self.endings = {"js": "application/javascript", "html": "text/html", "css": "text/css"}
+		
 	def run(self):
 		header = HTTPRequestHeader()
 		# fetch and parse the http request
@@ -112,32 +116,32 @@ class ClientThread(threading.Thread):
 				else:
 					data = b""
 				if not header.parse(sHeader):
-					self.cs.send(b"HTTP/1.1 400 Bad Request\r\n\r\n")
+					self.respondeError(400)
 					return
 				if header.hasHeader("Content-Length"):
 					expectedLength = int(header.getHeader("Content-Length"))
+					
 			# wait for remaining data
 			if header.populated:
 				if len(data) == expectedLength:
 					break
 				elif len(data) > expectedLength:
-					self.cs.send(b"HTTP/1.1 411 Length Required\r\n\r\n")
+					self.respondeError(411)
 		
 		#parse message body if required
 		reqData = {}
 		if header.method in ["PUT", "POST"]:
 			if not (header.hasHeader("Content-Type") and header.getHeader("Content-Type") == "application/json"):
-				self.cs.send(b"HTTP/1.1 415 Unsupported Media Type\r\n\r\n")
+				self.respondeError(415)
 				return
 			try:
 				reqData = json.loads(str(data, "UTF-8"))
 			except (json.decoder.JSONDecodeError, ValueError):
-				print("ost2")
-				self.cs.send(b"HTTP/1.1 400 Bad Request\r\nContent-Length:0\r\n\r\n")
+				self.respondeError(400)
 				return
 			if reqData == None:
 				print(2)
-				self.cs.send(b"HTTP/1.1 415 Unsupported Media Type\r\n\r\n")
+				self.respondeError(415)
 				return
 		# construct a reply
 		if len(header.url) > 0 and header.url[0] == "api":
@@ -189,13 +193,16 @@ class ClientThread(threading.Thread):
 			
 	def apiResponse(self, reqHeaders, reqData):
 		respHeader = HTTPResponseHeader()
-		sContent = ""
-		try:
-			content = self.api.executeQuery(reqHeaders, respHeader, reqData)
+		respHeader.setError(200)
+		
+		content = self.api.executeQuery(reqHeaders, respHeader, reqData)
+		if respHeader.isOk():
 			sContent = json.dumps(content)
-			respHeader.setError(200)
-		except ValueError as e:
-			sContent = json.dumps(str(e))
-		respHeader.add("Content-Type", "application/json")
+			respHeader.add("Content-Type", "application/json")
+		else:
+			sContent = ""
 		respHeader.add("Content-Length", len(sContent))
 		return (respHeader, bytes(sContent, "utf-8"))
+		
+	def respondeError(self, httpErrorCode):
+		self.cs.send(b"HTTP/1.1 " + httpErrorCode + b" " + HTTP_ERROR_MESS[httpErrorCode] + b"\r\nContent-Length:0\r\n\r\n")

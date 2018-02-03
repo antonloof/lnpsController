@@ -1,7 +1,7 @@
 === What it is ===
 This project is a combinaton of a file serving web server and a rest api.
-It serves both json data from power supplies and led (not implemented) and
-a basic web interface that demos how everything to use the api
+It serves both json data from power supplies and leds as well as
+a basic web interface that demos how to use the api
 
 === How it all works ===
 The file main.py starts both the rest api and web server on the port 5049
@@ -20,7 +20,7 @@ A few things must be cleared up before showing the api tree
 	1. If you request an object that is not at the end of a branch it will 
 		return an object with all the subobjects in it. 
 	2. The current currently delivered by the power supply is located 
-		in the api/v1/dev/<no>/status/status object. 
+		in the api/v1/dev/<id>/status/status object. 
 	3. A pw is required for setting data in the power supply, this is to 
 		prevent automatic scrips controlling a power supply it should not.
 		
@@ -52,4 +52,4 @@ api
 					pw [get, string]
 				name [get, string]
 				teststatus [get put, string]
-				led [get put, NOT IMPLEMENTED]
+				led [get put, int]
