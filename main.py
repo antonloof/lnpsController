@@ -43,5 +43,5 @@ testStatusController = TestStatusController()
 testStatusController.start()
 rootApi = restapiDefs.createApi(benches, ledController, testStatusController)	
 
-server = AsyncRESTServer("localhost", config["serverPort"], rootApi)
+server = AsyncRESTServer(config["serverPort"], rootApi)
 server.start()
