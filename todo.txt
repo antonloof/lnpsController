@@ -1,0 +1,5 @@
+1. ingen krash när man drar ut saker
+2. om ett serno inte hittas, säg FEL
+3. 404 borde komman när saker inte finns
+4. testa om man kommer åt servern utifrån
+5. leddarna behöver en config; kanske?

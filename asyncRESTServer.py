@@ -4,11 +4,12 @@ from urllib import parse
 HTTP_ERROR_MESS = {200:"OK", 400:"Bad Request",403:"Forbidden",404:"Not Found",405:"Method Not Allowed",411:"Length Required"}
 
 class AsyncRESTServer():
-	def __init__(self, host, port, api):
+	def __init__(self, port, api):
 		self.api = api
 		self.serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self.serversocket.bind((host, port))
-		
+		#self.serversocket.bind((socket.gethostname(), port))
+		self.serversocket.bind(("localhost", port))		
+
 	def start(self):		
 		self.serversocket.listen(5)
 		while True:
@@ -130,7 +131,7 @@ class ClientThread(threading.Thread):
 				return
 			try:
 				reqData = json.loads(str(data, "UTF-8"))
-			except json.decoder.JSONDecodeError:
+			except (json.decoder.JSONDecodeError, ValueError):
 				print("ost2")
 				self.cs.send(b"HTTP/1.1 400 Bad Request\r\nContent-Length:0\r\n\r\n")
 				return
