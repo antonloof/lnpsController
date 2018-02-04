@@ -1,15 +1,176 @@
 {
-	"ledPort": "COM5",
+	"ledPort": "/dev/ttyUSB1",
 	"benches": [
-		{
-			"ps": "2633370194",
-			"id": "1",
-			"name": "Kalle Anka",
-			"pw": "1234",
-			"row": 1,
-			"col": 3
-		}
-	],
-	"ports": ["COM7"],
+                {
+                        "ps": "2723893204",
+                        "id": "11",
+                        "name": "HIL plats 11",
+                        "pw": "1234",
+                        "row": 1,
+                        "col": 1
+                },
+                {
+                        "id": "12",
+                        "name": "HIL plats 12",
+                        "pw": "1234",
+                        "row": 1,
+                        "col": 2
+                },
+                {
+                        "id": "13",
+                        "name": "HIL plats 13",
+                        "pw": "1234",
+                        "row": 1,
+                        "col": 3
+                },
+                {
+                        "id": "14",
+                        "name": "HIL plats 14",
+                        "pw": "1234",
+                        "row": 1,
+                        "col": 4
+                },
+                {
+                        "id": "15",
+                        "name": "HIL plats 15",
+                        "pw": "1234",
+                        "row": 1,
+                        "col": 5
+                },
+                {
+                        "id": "16",
+                        "name": "HIL plats 16",
+                        "pw": "1234",
+                        "row": 1,
+                        "col": 6
+                },
+                {
+                        "id": "17",
+                        "name": "HIL plats 17",
+                        "pw": "1234",
+                        "row": 1,
+                        "col": 7
+                },
+                {
+                        "id": "18",
+                        "name": "HIL plats 18",
+                        "pw": "1234",
+                        "row": 1,
+                        "col": 8
+                },
+                {
+                        "id": "21",
+                        "name": "HIL plats 21",
+                        "pw": "1234",
+                        "row": 2,
+                        "col": 1
+                },
+                {
+                        "id": "22",
+                        "name": "HIL plats 22",
+                        "pw": "1234",
+                        "row": 2,
+                        "col": 2
+                },
+                {
+                        "id": "23",
+                        "name": "HIL plats 23",
+                        "pw": "1234",
+                        "row": 2,
+                        "col": 3
+                },
+                {
+                        "id": "24",
+                        "name": "HIL plats 24",
+                        "pw": "1234",
+                        "row": 2,
+                        "col": 4
+                },
+                {
+                        "id": "25",
+                        "name": "HIL plats 25",
+                        "pw": "1234",
+                        "row": 2,
+                        "col": 5
+                },
+                {
+                        "id": "26",
+                        "name": "HIL plats 26",
+                        "pw": "1234",
+                        "row": 2,
+                        "col": 6
+                },
+                {
+                        "id": "27",
+                        "name": "HIL plats 27",
+                        "pw": "1234",
+                        "row": 2,
+                        "col": 7
+                },
+                {
+                        "id": "28",
+                        "name": "HIL plats 28",
+                        "pw": "1234",
+                        "row": 2,
+                        "col": 8
+                },
+                {
+                        "id": "31",
+                        "name": "HIL plats 31",
+                        "pw": "1234",
+                        "row": 3,
+                        "col": 1
+                },
+                {
+                        "id": "32",
+                        "name": "HIL plats 32",
+                        "pw": "1234",
+                        "row": 3,
+                        "col": 2
+                },
+                {
+                        "id": "33",
+                        "name": "HIL plats 33",
+                        "pw": "1234",
+                        "row": 3,
+                        "col": 3
+                },
+                {
+                        "id": "34",
+                        "name": "HIL plats 34",
+                        "pw": "1234",
+                        "row": 3,
+                        "col": 4
+                },
+                {
+                        "id": "35",
+                        "name": "HIL plats 35",
+                        "pw": "1234",
+                        "row": 3,
+                        "col": 5
+                },
+                {
+                        "id": "36",
+                        "name": "HIL plats 36",
+                        "pw": "1234",
+                        "row": 3,
+                        "col": 6
+                },
+                {
+                        "id": "37",
+                        "name": "HIL plats 37",
+                        "pw": "1234",
+                        "row": 3,
+                        "col": 7
+                },
+                {
+                        "id": "38",
+                        "name": "HIL plats 38",
+                        "pw": "1234",
+                        "row": 3,
+                        "col": 8
+                }
+    	],
+	"ports": ["/dev/ttyACM1"],
 	"serverPort": 5049
 }

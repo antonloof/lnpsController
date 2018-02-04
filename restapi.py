@@ -103,6 +103,7 @@ class RestAPI():
 				return self.apiBranch.delete(respHeader, navData)
 		except ValueError as e:
 			respHeader.setError(400)
+			print(str(e))
 			return str(e)
 			
 	def executeQuery(self, reqHeaders, respHeader, reqData):

@@ -196,11 +196,8 @@ class ClientThread(threading.Thread):
 		respHeader.setError(200)
 		
 		content = self.api.executeQuery(reqHeaders, respHeader, reqData)
-		if respHeader.isOk():
-			sContent = json.dumps(content)
-			respHeader.add("Content-Type", "application/json")
-		else:
-			sContent = ""
+		sContent = json.dumps(content)
+		respHeader.add("Content-Type", "application/json")
 		respHeader.add("Content-Length", len(sContent))
 		return (respHeader, bytes(sContent, "utf-8"))
 		

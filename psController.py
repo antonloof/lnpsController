@@ -146,10 +146,11 @@ class PsResponse():
 		return int.from_bytes(self.data, byteorder='big')
 		
 	def getError(self):
-		if len(self.errors) == 0 or (len(self.errors) == 1 and self.errors[0] == PS_ERRORS[0]):
-			pass
-		else:
-			raise ValueError(self.errors[0])
+		if len(self.errors) != 0:
+			if len(self.errors) == 1 and self.errors[0] == PS_ERRORS[0]:
+				return self.errors[0]
+			else:
+				raise ValueError(self.errors[0])
 		
 	def toClass(self):
 		iClass = self.toInt16()
@@ -384,7 +385,10 @@ class PsController(Controller):
 		try:
 			return self.ps.dynamicCall(req.func, req.data)
 		except ValueError as e:
-			req.error = str(e)
+			if str(e) != PS_ERRORS[0]:
+				req.error = str(e)
+			else:
+				return PS_ERRORS[0]
 		
 	def getpw(self):
 		return self.pw

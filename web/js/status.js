@@ -1,10 +1,10 @@
 $(function () {
-	$.getJSON("http://localhost:5049/api/v1/dev", loadBenches);
+	$.getJSON("/api/v1/dev", loadBenches);
 });
 
 function loadBenches(available){
   for (var i = 0; i < available.length; i++) {
-		$.getJSON("http://localhost:5049/api/v1/dev/" + available[i], function (bench) {
+		$.getJSON("/api/v1/dev/" + available[i], function (bench) {
 			$("body").append('<div class="bench">' +
 				'<h2>' + bench.name + '</h2>' + 
 				'<div class="ps">' +

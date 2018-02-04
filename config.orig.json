@@ -1,0 +1,22 @@
+{
+	"ledPort": "/dev/ttyUSB1",
+	"benches": [
+		{
+			"ps": "2723893204",
+			"id": "1",
+			"name": "HIL plats 01",
+			"pw": "1234",
+			"row": 1,
+			"col": 1
+		},
+                {
+                        "id": "2",
+                        "name": "HIL plats 02",
+                        "pw": "1234",
+                        "row": 1,
+                        "col": 2
+                }
+  	],
+	"ports": ["/dev/ttyACM1"],
+	"serverPort": 5049
+}

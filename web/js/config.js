@@ -89,10 +89,11 @@ $(function() {
 			
 			$.ajax({
 				url: "/api/v1/dev/" + devs[i] + "/pw",
-				context: devs[i],
 				dataType: "json",
+				context: {item: item, dev: devs[i]},
 				success: function (pw) {
-					var dev = $(this)[0];
+					var dev = $(this)[0].dev;
+					var item = $(this)[0].item;
 					for (var j = 0; j < inputs.length; j++) {
 						var row = $("<tr></tr>");
 						row.append("<th>" + inputs[j].displayName + "</th>");
@@ -116,7 +117,6 @@ $(function() {
 								}
 							});
 						}
-						
 						button.click({input: inputs[j], dev: dev, pw: pw}, function (evt) {
 							var value = $(this).parent().parent().find('input[name="' + evt.data.input.name + '"]').val();
 							var message = $(this).parent().parent().find(".message");

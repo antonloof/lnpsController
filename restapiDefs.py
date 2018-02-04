@@ -91,7 +91,7 @@ class VoltageBranch(LnpsControllerBranch):
 		nomCurrent = self.psControllers[navData["benchNo"]].waitQuery(PsRequest("getNomCurrent"))
 		voltage = validateFloat(sVoltage, respHeader, "voltage", 0, nomVoltage)
 		# limit current before setting voltage
-		if nomPower / voltage > nomCurrent:
+		if nomPower >= nomCurrent * voltage:
 			setCurrent = nomCurrent
 		else:
 			setCurrent = nomPower / voltage
