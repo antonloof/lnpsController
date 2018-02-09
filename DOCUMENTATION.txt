@@ -23,6 +23,7 @@ A few things must be cleared up before showing the api tree
 		in the api/v1/dev/<id>/status/status object. 
 	3. A pw is required for setting data in the power supply, this is to 
 		prevent automatic scrips controlling a power supply it should not.
+	4. Requesting more than one item will always result in a HTTP 200 response
 		
 api
 	v1

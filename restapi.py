@@ -76,20 +76,19 @@ class RestAPI():
 				respHeader.setError(404)
 				return None
 				
-	def fetchData(self, method, respHeader, reqData, navData):
+	def fetchData(self, method, respHeader, reqData, navData, errorInHttp=True):
 		if self.apiBranch is None:
 			if self.isArray:
 				respHeader.setError(400)
 				raise ValueError("Getting entire lists not supported")
 			res = {}
 			for k,v in self.children.items():
-				try:
-					if k in reqData:
-						res[k] = v.fetchData(method, respHeader, reqData[k], navData)
-					else:
-						res[k] = v.fetchData(method, respHeader, reqData, navData)
-				except ValueError as e:
-					res[k] = str(e)
+				if k in reqData:
+					res[k] = v.fetchData(method, respHeader, reqData[k], navData, False)
+				else:
+					res[k] = v.fetchData(method, respHeader, reqData, navData, False)
+			# suppress all http errors if multiple objects are fetched at once
+			respHeader.setError(200)
 			return res
 		
 		try:
@@ -102,8 +101,8 @@ class RestAPI():
 			elif method == "DELETE":
 				return self.apiBranch.delete(respHeader, navData)
 		except ValueError as e:
-			respHeader.setError(400)
-			print(str(e))
+			if errorInHttp:
+				respHeader.setError(400)
 			return str(e)
 			
 	def executeQuery(self, reqHeaders, respHeader, reqData):

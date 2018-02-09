@@ -140,7 +140,6 @@ class ClientThread(threading.Thread):
 				self.respondeError(400)
 				return
 			if reqData == None:
-				print(2)
 				self.respondeError(415)
 				return
 		# construct a reply
