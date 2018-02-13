@@ -25,8 +25,8 @@ function update(currentLimit, current, voltage, name, teststatus, statusDiv, dev
 	getJson("/api/v1/dev/" + dev + "/ps/status/voltage", voltage, function(data, target) {
 		target.text(round(data, 2) + " V");
 	});
-	getJson("/api/v1/dev/" + dev + "/ps/status/status/current", current, function(data, target) {
-		target.text(round(data, 2) + " A");
+	getJson("/api/v1/dev/" + dev + "/ps/status/status", current, function(data, target) {
+		target.text(round(data.current, 2) + " A");
 	});
 	getJson("/api/v1/dev/" + dev + "/ps/status/currentLimit", currentLimit, function(data, target) {
 		target.text("/ " + round(data, 2) + " A");
@@ -37,6 +37,7 @@ $(function () {
 	$.getJSON("/api/v1/dev", function(resp) {
 		resp.sort();
 		for (var i = 0; i < resp.length; i++) {
+			var currentWrapper = $('<span></span>');
 			var currentLimit = $('<span class="current-limit">/ ? A</span>');
 			var current = $('<span class="current">? A</span>');
 			var voltage = $('<span class="voltage">? V</span>');
@@ -44,10 +45,11 @@ $(function () {
 			var teststatus = $('<div class="test-status">?</div>')
 			var statusDiv = $('<div class="status-div"></div>');
 			var dev = resp[i];
-			current.append(currentLimit);
+			currentWrapper.append(current);
+			currentWrapper.append(currentLimit);
 			statusDiv.append(name);
 			statusDiv.append(voltage);
-			statusDiv.append(current);
+			statusDiv.append(currentWrapper);
 			statusDiv.append(teststatus);
 			$("body").append(statusDiv);
 			update(currentLimit, current, voltage, name, teststatus, statusDiv, dev);

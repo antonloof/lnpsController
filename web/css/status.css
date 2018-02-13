@@ -15,14 +15,13 @@ html,body {
 }
 
 .current {
-	width: 100%;
 	display: inline-block;
 	margin-top: 10px;
 }
 
 .status-div {
 	width: 12.5%;
-	height: 33.333%;
+	height: calc(33.333% - 4px);
 	display: inline-block;
 	text-align: center;
 	margin: 0;

@@ -1,5 +1,5 @@
 {
-	"ledPort": "COM5",
+	"ledPort": "/dev/ttyUSB0",
 	"benches": [
 							{
 								"ps": "2723893204",
@@ -171,6 +171,6 @@
 								"col": 8
 							}
     	],
-	"ports": [],
+	"ports": ["/dev/ttyACM0"],
 	"serverPort": 5049
 }
