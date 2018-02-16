@@ -22,7 +22,7 @@ class LedController(Controller):
 	def tryConnectSerial(self):
 		self.isConnected = False
 		try:
-			self.serial = serial.Serial(self.port, BAUD_RATE, timeout=1)
+			self.serial = serial.Serial(self.port, BAUD_RATE, timeout=1, write_timeout=1)
 		except serial.serialutil.SerialException:
 			print("WARNING: Could not connect to led controller at port", self.port)
 			return False
@@ -68,7 +68,9 @@ class LedController(Controller):
 				return self.process(req)
 		
 		resp = resp.decode("ascii")
-		
+		if len(resp) == 0:
+			return "Incorrect response 5"
+			
 		#parse response
 		if req.isGet:
 			if resp[0] != 'G':
