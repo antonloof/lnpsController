@@ -1,4 +1,4 @@
-from controller import *
+from app.controller.controller import *
 import threading, json
 
 DATA_PATH = "data/data.json"

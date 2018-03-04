@@ -1,3 +1,4 @@
 pyserial, installeras med pip
+flask, installeras med pip
 jquery 3.2.1, placeras i web/lib/jquery-3.2.1.js
 pyhton >= 3.5

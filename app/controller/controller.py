@@ -5,14 +5,15 @@ class Request:
 		self.res = None
 		self.sem = threading.Semaphore(0)
 		self.error = ""
+		self.success = True
 		
 	def callback(self, res):
 		self.res = res
 		self.sem.release()
 		
-	def throwError(self):
-		if self.error != "":
-			raise(ValueError(self.error))
+	def setError(self, e):
+		self.error = e
+		self.success = False
 		
 class Controller(threading.Thread):
 	def __init__(self):
@@ -31,10 +32,9 @@ class Controller(threading.Thread):
 	def waitQuery(self, req):
 		with self.lock:
 			self.queue.append(req)
-		self.sem.release() 
+		self.sem.release()
 		req.sem.acquire()
-		req.throwError()
-		return req.res
+		return req
 		
 	def process(self, req):
 		raise NotImplementedError("IT'S MISSING, ARRG!!1")

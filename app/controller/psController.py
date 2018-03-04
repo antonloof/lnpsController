@@ -1,5 +1,5 @@
 import threading, serial, time, struct, sys
-from controller import *
+from app.controller.controller import *
 
 ## ps communication constants
 MSG_TYPE_SEND = 0xC0
@@ -386,7 +386,7 @@ class PsController(Controller):
 			return self.ps.dynamicCall(req.func, req.data)
 		except ValueError as e:
 			if str(e) != PS_ERRORS[0]:
-				req.error = str(e)
+				req.setError(str(e))
 			else:
 				return PS_ERRORS[0]
 		

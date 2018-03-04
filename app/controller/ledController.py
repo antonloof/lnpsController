@@ -1,5 +1,5 @@
 import serial, threading
-from controller import *
+from app.controller.controller import *
 BAUD_RATE = 115200
 
 LED_ERRORS = {0: "OK", 1: "ROW OUT OF RANGE", 2: "COL OUT OF RANGE", 3: "MODE OUT OF RANGE"}
@@ -16,8 +16,9 @@ class LedController(Controller):
 	def __init__(self, port):
 		super().__init__()
 		self.port = port
+		self.serial = None
+		self.isConnected = False
 		self.tryConnectSerial()
-		
 		
 	def tryConnectSerial(self):
 		self.isConnected = False
@@ -46,7 +47,7 @@ class LedController(Controller):
 		except serial.serialutil.SerialException:
 			print("WARNING: Serial connection with led controller on port", self.port, "lost (write)")
 			if not self.tryConnectSerial():
-				req.error = "No serial connection with led controller"
+				req.setError("No serial connection with led controller")
 				return
 			else:
 				return self.process(req)
@@ -62,32 +63,42 @@ class LedController(Controller):
 		except serial.serialutil.SerialException:
 			print("WARNING: Serial connection with led controller on port", self.port, "lost (read)")
 			if not self.tryConnectSerial():
-				req.error = "No serial connection with led controller"
+				req.setError("No serial connection with led controller")
 				return
 			else:
 				return self.process(req)
 		
 		resp = resp.decode("ascii")
 		if len(resp) == 0:
-			return "Incorrect response 5"
+			req.setError("Incorrect response 5")
+			return
 			
 		#parse response
 		if req.isGet:
 			if resp[0] != 'G':
-				return "Incorrect response 1"
+				req.setError("Incorrect response 1")
+				return 
 			if resp.count(":") != 3:
-				return "Incorrect response 2"
+				req.setError("Incorrect response 2")
+				return 
 			try:
 				r, c, v = [int(x) for x in resp[2:].split(":")]
 			except ValueError:
-				return "Incorrect response 3"
+				req.setError("Incorrect response 3")
+				return 
 			if r != req.row or c != req.col:
-				return "Incorrect response 4"
+				req.setError("Incorrect response 4")
+				return 
 			return v
 		else:
 			if resp[0] != "E":
-				return "Incorrect response 1"
+				req.setError("Incorrect response 6")
+				return 
 			try:
-				return LED_ERRORS[int(resp[2:])]
+				errorCode = int(resp[2:])
+				if errorCode == 0:
+					return LED_ERRORS[0]
+				else:
+					req.setError(LED_ERRORS[errorCode])
 			except (ValueError, KeyError):
-				return "Incorrect response 2"
+				req.setError("Unknown error code")
