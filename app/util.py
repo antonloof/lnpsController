@@ -4,7 +4,7 @@ def benchNotFound(dev):
 	return jsonify("Bench " + dev + " does not exist"), 404
 	
 def benchNoPs(dev):
-	return jsonify("Bench " + dev + " does not have a power supply"), 500
+	return jsonify("Bench " + dev + " does not have a power supply"), 503
 
 def missingKeys(*args):
 	res = "Keys "

@@ -77,15 +77,16 @@ def voltage(dev):
 		if not benches[dev].validatePw(data["pw"]):
 			return wrongPw()
 		
-		nomCurrent = benches[dev].waitQuery(PsRequest("getNomCurrent"))
-		nomVoltage = benches[dev].waitQuery(PsRequest("getNomVoltage"))
-		nomPower = benches[dev].waitQuery(PsRequest("getNomPower"))
+		nomCurrent = benches[dev].waitQuery(PsRequest("getNomCurrent")).res
+		nomVoltage = benches[dev].waitQuery(PsRequest("getNomVoltage")).res
+		nomPower = benches[dev].waitQuery(PsRequest("getNomPower")).res
+		print(nomVoltage)
 
 		v,e = validateFloat("Voltage", data['voltage'], 0, nomVoltage)
 		if not e:
 			return jsonify(v), 400
 		
-		if nomPower >= nomCurrent * voltage:
+		if nomPower >= nomCurrent * v:
 			setCurrent = nomCurrent
 		else:
 			setCurrent = nomPower / v
@@ -111,9 +112,9 @@ def currentLimit(dev):
 		if not benches[dev].validatePw(data["pw"]):
 			return wrongPw()
 		
-		nomCurrent = benches[dev].waitQuery(PsRequest("getNomCurrent"))
-		voltage = benches[dev].waitQuery(PsRequest("getVoltage"))
-		nomPower = benches[dev].waitQuery(PsRequest("getNomPower"))
+		nomCurrent = benches[dev].waitQuery(PsRequest("getNomCurrent")).res
+		voltage = benches[dev].waitQuery(PsRequest("getVoltage")).res
+		nomPower = benches[dev].waitQuery(PsRequest("getNomPower")).res
 		
 		currentLimit,e = validateFloat("Current limit", data['currentLimit'], 0, nomCurrent)
 		if not e:
@@ -150,7 +151,7 @@ def remote(dev):
 		if not e:
 			return jsonify(v), 400
 			
-		return preformPsQuery(dev, benches, PsRequest("setRemote", v))
+		return preformPsQuery(benches, dev, PsRequest("setRemote", v))
 		
 @app.route("/api/v1/dev/<dev>/ps/status/switch", methods = ["GET", "PUT"])
 def switch(dev):
@@ -170,7 +171,7 @@ def switch(dev):
 		if not e:
 			return jsonify(v), 400
 			
-		return preformPsQuery(dev, benches, PsRequest("setSwitch", v))
+		return preformPsQuery(benches, dev, PsRequest("setSwitch", v))
 		
 @app.route("/api/v1/dev/<dev>/ps/status/overVoltage", methods = ["GET", "PUT"])
 def overVoltage(dev):
@@ -190,11 +191,11 @@ def overVoltage(dev):
 		if not benches[dev].validatePw(data["pw"]):
 			return wrongPw()
 			
-		nomVoltage = benches[dev].waitQuery(PsRequest("getNomVoltage"))
+		nomVoltage = benches[dev].waitQuery(PsRequest("getNomVoltage")).res
 		v,e = validateFloat("Over voltage", data["overVoltage"], 0, nomVoltage)
 		if not e:
 			return jsonify(v), 400
-		return preformPsQuery(benches, dev, PsRequest("setNomVoltage", v))
+		return preformPsQuery(benches, dev, PsRequest("setOverVoltage", v))
 			
 @app.route("/api/v1/dev/<dev>/ps/status/overCurrent", methods = ["GET", "PUT"])
 def overCurrent(dev):
@@ -214,11 +215,11 @@ def overCurrent(dev):
 		if not benches[dev].validatePw(data["pw"]):
 			return wrongPw()
 			
-		nomCurrent = benches[dev].waitQuery(PsRequest("getNomCurrent"))
+		nomCurrent = benches[dev].waitQuery(PsRequest("getNomCurrent")).res
 		v,e = validateFloat("Over current", data["overCurrent"], 0, nomCurrent)
 		if not e:
 			return jsonify(v), 400
-		return preformPsQuery(benches, dev, PsRequest("setNomCurrent", v))
+		return preformPsQuery(benches, dev, PsRequest("setOverCurrent", v))
 			
 @app.route("/api/v1/dev/<dev>/ps/query", methods = ["POST"])
 def postQuery(dev):
@@ -226,7 +227,7 @@ def postQuery(dev):
 		return benchNotFound(dev)
 	if not benches[dev].hasPs():
 		return benchNoPs()
-		
+	data = request.get_json(force = True)
 	if not ("hex" in data and "pw" in data):
 		return missingKeys("hex", "pw")
 		
@@ -234,7 +235,7 @@ def postQuery(dev):
 		return wrongPw()
 		
 	try:
-		bytes = bytearray.fromhex(reqData["hex"])
+		bytes = bytearray.fromhex(data["hex"])
 	except ValueError:
 		return jsonify("hex is not a hexadecimal string"), 400
 	if len(bytes) < 3:
@@ -277,7 +278,7 @@ def led(dev):
 		data = request.get_json(force = True)
 		if not "mode" in data:
 			return missingKeys("mode")
-		res = ledController.waitQuery(LedRequest(True, bench.row, bench.col, data["mode"]))
+		res = ledController.waitQuery(LedRequest(False, bench.row, bench.col, data["mode"]))
 	if res.success:
 		return jsonify(res.res)
 	else:

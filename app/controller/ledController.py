@@ -41,7 +41,6 @@ class LedController(Controller):
 		if not req.isGet:
 			mess += ":" + str(req.mode)
 		mess += "\n"
-		
 		try:
 			self.serial.write(mess.encode("ascii"))
 		except serial.serialutil.SerialException:

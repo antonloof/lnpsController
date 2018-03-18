@@ -75,8 +75,10 @@ function set(url, data, context, method, success, error) {
 
 $(function() {
 	$.getJSON("/api/v1/dev", function (devs) {
+		devs.sort();
 		for (var i = 0; i < devs.length; i++) {
 			var item = $('<li><span class="text">' + devs[i] + '</span><table class="hidden"></table></li>');
+			$("#devList").append(item);
 			$.ajax({
 				url: "/api/v1/dev/" + devs[i] + "/name", 
 				context: item,
@@ -143,7 +145,6 @@ $(function() {
 					item.children(".text").click(function () {
 						$(this).parent().children("table").toggleClass("hidden")
 					});
-					$("#devList").append(item);
 				}
 			});			
 		}
