@@ -270,7 +270,7 @@ class PowerSupply():
 	def getType(self):
 		return self.get(ComObject.DEV_TYPE).toString()
 		
-	def getSWVersion(self):
+	def getSwVersion(self):
 		return self.get(ComObject.DEV_SW_VERSION).toString()
 		
 	def getNomVoltage(self):

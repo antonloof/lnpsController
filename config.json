@@ -1,8 +1,7 @@
 {
-	"ledPort": "",
+	"ledPort": "/dev/ttyUSB0",
 	"benches": [
 							{
-								"ps": "2723893204",
 								"id": "11",
 								"name": "HIL plats 11",
 								"pw": "1234",
@@ -38,6 +37,7 @@
 								"col": 5
 							},
 							{
+                                                                "ps": "2723893204",
 								"id": "16",
 								"name": "HIL plats 16",
 								"pw": "1234",
@@ -171,5 +171,5 @@
 								"col": 8
 							}
     	],
-	"ports": []
+	"ports": ["/dev/ttyACM0"]
 }

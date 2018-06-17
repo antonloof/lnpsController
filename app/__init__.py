@@ -42,10 +42,10 @@ for i in range(len(config["benches"])):
 	# add ps controller if found
 	controller = PsController(bench["pw"], bench["row"], bench["col"], bench["id"], bench["name"])
 	if "ps" in bench:
-		for i in range(len(pss)):
-			if pss[i].getSerialNo() == bench["ps"]:
-				controller.setPs(pss[i])
-				usedPss[i] = True
+		for j in range(len(pss)):
+			if pss[j].getSerialNo() == bench["ps"]:
+				controller.setPs(pss[j])
+				usedPss[j] = True
 	
 	if not controller.hasPs():
 		print("WARNING: Bench", bench["name"], "does not have a power supply")
